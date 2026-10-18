@@ -1,0 +1,22 @@
+unit_id,isp,state,census,download_mbps,upload_mbps,whitebox_model,primary_target,n_peak_records,n_peak_jitter_records,reason
+925928,Cincinnati Bell,OH,Midwest,500,125,ac1750v2,sp1-vm-atlanta-us.samknows.com,45,13,n_peak_records < 50
+940736,Cincinnati Bell,OH,Midwest,500,125,ac1750v2,sp1-vm-ashburn-us.samknows.com,45,28,n_peak_records < 50
+943230,Cincinnati Bell,OH,Midwest,500,125,ac1750v2,sp2-vm-chicago-us.samknows.com,26,6,n_peak_records < 50
+1000774,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-chicago-us.samknows.com,32,20,n_peak_records < 50
+1000946,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-chicago-us.samknows.com,48,29,n_peak_records < 50
+3551873,Verizon,NJ,Northeast,200,200,skwb8,sp2-vm-newyork-us.samknows.com,12,12,n_peak_records < 50
+3602917,Verizon,VA,South,200,200,skwb8,sp2-vm-newyork-us.samknows.com,49,6,n_peak_records < 50
+3799009,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp2-vm-chicago-us.samknows.com,13,7,n_peak_records < 50
+3814781,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-atlanta-us.samknows.com,43,10,n_peak_records < 50
+3892905,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp2-vm-chicago-us.samknows.com,48,7,n_peak_records < 50
+24559133,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-chicago-us.samknows.com,44,7,n_peak_records < 50
+24807209,Frontier,TX,South,500,500,skwb8,sp1-vm-dallas-us.samknows.com,49,48,n_peak_records < 50
+25170393,Verizon,NJ,Northeast,75,75,skwb8,sp2-vm-newyork-us.samknows.com,38,30,n_peak_records < 50
+25170473,Verizon,MA,Northeast,75,75,skwb8,sp2-vm-newyork-us.samknows.com,45,58,n_peak_records < 50
+25314149,Verizon,PA,Northeast,100,100,skwb8,sp2-vm-chicago-us.samknows.com,48,5,n_peak_records < 50
+25658017,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp2-vm-chicago-us.samknows.com,24,13,n_peak_records < 50
+25755241,Cincinnati Bell,KY,South,500,125,skwb8,sp2-vm-chicago-us.samknows.com,45,21,n_peak_records < 50
+26114189,Verizon,VA,South,100,100,skwb8,sp1-vm-ashburn-us.samknows.com,43,29,n_peak_records < 50
+37476529,Cincinnati Bell,OH,Midwest,250,100,skwb8,sp1-vm-chicago-us.samknows.com,36,10,n_peak_records < 50
+55458489,Verizon,VA,South,75,75,skwb8,sp1-vm-ashburn-us.samknows.com,2,12,n_peak_records < 50
+55518553,Verizon,MA,Northeast,200,200,skwb8,sp2-vm-newyork-us.samknows.com,40,18,n_peak_records < 50

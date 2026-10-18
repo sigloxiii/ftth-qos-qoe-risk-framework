@@ -1,0 +1,5 @@
+time_reading,server_rule,analyzed,insufficient,at_risk,flag_latency,flag_jitter,flag_loss,severe
+local,primary_only,237,21,5,5,0,1,1
+local,all_servers,248,10,21,21,0,1,1
+utc,primary_only,239,19,4,4,0,0,0
+utc,all_servers,250,8,17,17,0,0,1

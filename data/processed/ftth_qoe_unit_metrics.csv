@@ -1,0 +1,238 @@
+unit_id,isp,state,census,download_mbps,upload_mbps,whitebox_model,primary_target,n_peak_records,n_peak_jitter_records,p95_latency_ms,p95_jitter_ms,loss_pct,n_days_above_threshold,p95_latency_without_worst_day_ms,flag_latency,flag_jitter,flag_loss,risk_flag,risk_severe
+925886,Cincinnati Bell,OH,Midwest,250,100,ac1750v2,sp1-vm-atlanta-us.samknows.com,127,68,14.8873,0.3562,0.0,0,14.8873,0,0,0,0,0
+925942,Cincinnati Bell,OH,Midwest,500,125,ac1750v2,sp1-vm-chicago-us.samknows.com,93,36,14.9306,,0.0406,0,14.9306,0,0,0,0,0
+940708,Cincinnati Bell,OH,Midwest,250,100,ac1750v2,sp1-vm-chicago-us.samknows.com,51,13,13.708,,0.0127,0,13.708,0,0,0,0,0
+940722,Cincinnati Bell,OH,Midwest,250,100,ac1750v2,sp1-vm-ashburn-us.samknows.com,54,11,15.4252,,0.003,0,15.4252,0,0,0,0,0
+940798,Cincinnati Bell,OH,Midwest,500,125,ac1750v2,sp1-vm-chicago-us.samknows.com,60,33,14.8584,,0.0,0,14.8584,0,0,0,0,0
+941740,Cincinnati Bell,OH,Midwest,500,125,ac1750v2,sp2-vm-chicago-us.samknows.com,78,28,9.4252,,0.0044,0,9.4252,0,0,0,0,0
+941782,Frontier,TX,South,500,500,ac1750v2,sp1-vm-dallas-us.samknows.com,119,104,3.3963,0.7819,0.0,0,3.3963,0,0,0,0,0
+941974,Verizon,VA,South,100,100,ac1750v2,sp1-vm-ashburn-us.samknows.com,113,74,13.6038,3.0755,0.0156,1,12.5916,0,0,0,0,0
+942020,Verizon,MD,South,100,100,ac1750v2,sp1-vm-ashburn-us.samknows.com,126,112,8.4058,2.6143,0.0019,0,8.4058,0,0,0,0,0
+942138,Verizon,NJ,Northeast,100,100,ac1750v2,sp1-vm-newyork-us.samknows.com,65,26,10.9688,,0.0,0,10.9688,0,0,0,0,0
+942200,Verizon,NY,Northeast,100,100,ac1750v2,sp2-vm-newyork-us.samknows.com,52,28,8.4306,,0.0085,0,8.4306,0,0,0,0,0
+942214,Cincinnati Bell,OH,Midwest,500,125,ac1750v2,sp2-vm-chicago-us.samknows.com,89,50,11.3858,0.353,0.0095,1,11.3637,0,0,0,0,0
+942216,Cincinnati Bell,OH,Midwest,500,125,ac1750v2,sp2-vm-chicago-us.samknows.com,92,30,12.1159,,0.0105,0,12.1159,0,0,0,0,0
+942250,Verizon,PA,Northeast,100,100,ac1750v2,sp2-vm-newyork-us.samknows.com,94,29,13.8084,,0.1042,0,13.8084,0,0,0,0,0
+942274,Frontier,TX,South,500,500,ac1750v2,sp1-vm-dallas-us.samknows.com,120,93,4.5309,2.3125,0.0338,0,4.5309,0,0,0,0,0
+942630,Frontier,FL,South,500,500,ac1750v2,sp1-vm-miami-us.samknows.com,140,119,15.038,1.3188,0.0007,0,15.038,0,0,0,0,0
+942822,Cincinnati Bell,OH,Midwest,500,125,ac1750v2,sp1-vm-chicago-us.samknows.com,78,49,12.4668,,0.0092,0,12.4668,0,0,0,0,0
+943190,Cincinnati Bell,OH,Midwest,250,100,ac1750v2,sp1-vm-chicago-us.samknows.com,83,39,9.8319,,0.004,0,9.8319,0,0,0,0,0
+943226,Cincinnati Bell,OH,Midwest,500,125,ac1750v2,sp2-vm-chicago-us.samknows.com,53,10,23.1342,,0.0,9,22.8623,1,0,0,1,0
+943232,Cincinnati Bell,OH,Midwest,500,125,ac1750v2,sp1-vm-atlanta-us.samknows.com,85,51,12.2278,0.3642,0.0,0,12.2278,0,0,0,0,0
+943236,Cincinnati Bell,OH,Midwest,500,125,ac1750v2,sp1-vm-chicago-us.samknows.com,54,16,14.1821,,0.027,0,14.1821,0,0,0,0,0
+943266,Cincinnati Bell,KY,South,500,125,ac1750v2,sp1-vm-atlanta-us.samknows.com,109,56,13.6312,1.0705,0.0,0,13.6312,0,0,0,0,0
+943306,Cincinnati Bell,OH,Midwest,250,100,ac1750v2,sp1-vm-ashburn-us.samknows.com,83,31,15.2406,,0.005,0,15.2406,0,0,0,0,0
+945122,Cincinnati Bell,OH,Midwest,250,100,ac1750v2,sp1-vm-chicago-us.samknows.com,71,44,14.949,,0.0,0,14.949,0,0,0,0,0
+947084,Cincinnati Bell,OH,Midwest,500,125,ac1750v2,sp1-vm-ashburn-us.samknows.com,78,16,14.922,,0.0008,0,14.922,0,0,0,0,0
+948646,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp2-vm-chicago-us.samknows.com,91,51,12.671,1.0685,0.0108,1,12.5231,0,0,0,0,0
+948764,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp2-vm-chicago-us.samknows.com,50,18,13.7106,,0.0048,0,13.7106,0,0,0,0,0
+948842,Cincinnati Bell,OH,Midwest,250,100,skwb8,sp1-vm-chicago-us.samknows.com,62,16,15.0551,,0.0089,0,15.0551,0,0,0,0,0
+948844,Cincinnati Bell,KY,South,500,125,skwb8,sp1-vm-atlanta-us.samknows.com,79,47,14.0182,,0.0133,0,14.0182,0,0,0,0,0
+950176,Verizon,MD,South,100,100,skwb8,sp1-vm-ashburn-us.samknows.com,124,111,11.7006,2.847,0.0103,0,11.7006,0,0,0,0,0
+996265,Verizon,VA,South,200,200,skwb8,sp1-vm-ashburn-us.samknows.com,137,116,12.4788,2.8348,0.0137,2,11.902,0,0,0,0,0
+997351,Verizon,VA,South,200,200,skwb8,sp1-vm-ashburn-us.samknows.com,116,95,7.7535,0.8022,0.0038,0,7.7535,0,0,0,0,0
+998059,Frontier,FL,South,500,500,skwb8,sp1-vm-miami-us.samknows.com,131,108,11.7625,0.8111,0.0,0,11.7625,0,0,0,0,0
+998971,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-atlanta-us.samknows.com,86,18,15.286,,0.0016,0,15.286,0,0,0,0,0
+1000023,Verizon,MA,Northeast,200,200,skwb8,sp2-vm-newyork-us.samknows.com,64,52,12.4017,0.6367,0.0231,0,12.4017,0,0,0,0,0
+1000127,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-atlanta-us.samknows.com,85,35,15.1254,,0.0011,0,15.1254,0,0,0,0,0
+1000143,Cincinnati Bell,OH,Midwest,250,100,skwb8,sp1-vm-atlanta-us.samknows.com,66,64,12.3205,0.574,0.0021,0,12.3205,0,0,0,0,0
+1000161,Frontier,CA,West,500,500,skwb8,sp1-vm-losangeles-us.samknows.com,58,48,9.9365,,0.0,0,9.9365,0,0,0,0,0
+1000183,Frontier,CA,West,500,500,skwb8,sp1-vm-losangeles-us.samknows.com,138,119,4.2537,0.8352,0.0284,0,4.2537,0,0,0,0,0
+1000764,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp2-vm-chicago-us.samknows.com,100,74,10.1312,0.9571,0.04,0,10.1312,0,0,0,0,0
+1000776,Cincinnati Bell,OH,Midwest,250,100,skwb8,sp1-vm-atlanta-us.samknows.com,65,37,14.7328,,0.0,0,14.7328,0,0,0,0,0
+1000850,Frontier,FL,South,500,500,skwb8,sp1-vm-miami-us.samknows.com,93,45,11.544,,0.0,0,11.544,0,0,0,0,0
+1000852,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp2-vm-chicago-us.samknows.com,110,58,9.6758,0.5845,0.0062,0,9.6758,0,0,0,0,0
+1000924,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-atlanta-us.samknows.com,82,31,15.6428,,0.0,0,15.6428,0,0,0,0,0
+1000972,Frontier,TX,South,500,500,skwb8,sp1-vm-dallas-us.samknows.com,126,82,7.3298,1.3084,0.0061,0,7.3298,0,0,0,0,0
+1001188,Verizon,MA,Northeast,75,75,skwb8,sp1-vm-newyork-us.samknows.com,89,67,15.5978,1.0858,0.003,0,15.5978,0,0,0,0,0
+1001298,Verizon,MD,South,200,200,skwb8,sp1-vm-ashburn-us.samknows.com,130,120,4.3653,0.8003,0.0172,2,4.0118,0,0,0,0,0
+1001336,Verizon,PA,Northeast,100,100,skwb8,sp2-vm-newyork-us.samknows.com,96,73,16.3355,2.8552,0.0162,0,16.3355,0,0,0,0,0
+1001922,Verizon,VA,South,100,100,skwb8,sp1-vm-ashburn-us.samknows.com,125,115,8.7276,2.8364,0.0058,0,8.7276,0,0,0,0,0
+1001956,Verizon,NY,Northeast,100,100,skwb8,sp1-vm-newyork-us.samknows.com,63,45,6.8027,,0.0239,0,6.8027,0,0,0,0,0
+1001984,Verizon,PA,Northeast,200,200,skwb8,sp2-vm-newyork-us.samknows.com,66,61,9.6565,1.3215,0.0007,0,9.6565,0,0,0,0,0
+1002070,Verizon,MD,South,100,100,skwb8,sp1-vm-ashburn-us.samknows.com,128,120,8.8611,0.5358,0.0121,0,8.8611,0,0,0,0,0
+1002196,Verizon,MA,Northeast,100,100,skwb8,sp2-vm-newyork-us.samknows.com,70,41,16.5845,,0.8323,0,16.5845,0,0,0,0,0
+1002462,Verizon,MA,Northeast,75,75,skwb8,sp1-vm-newyork-us.samknows.com,97,52,10.6732,0.7872,0.0211,0,10.6732,0,0,0,0,0
+1006458,Cincinnati Bell,OH,Midwest,250,100,skwb8,sp1-vm-ashburn-us.samknows.com,58,13,13.6468,,0.0066,0,13.6468,0,0,0,0,0
+1006488,Frontier,TX,South,500,500,skwb8,sp1-vm-dallas-us.samknows.com,122,106,3.9979,1.3585,0.0006,0,3.9979,0,0,0,0,0
+1006778,Cincinnati Bell,KY,South,250,100,skwb8,sp2-vm-chicago-us.samknows.com,56,23,13.3018,,0.0139,0,13.3018,0,0,0,0,0
+1006958,Verizon,PA,Northeast,75,75,skwb8,sp1-vm-chicago-us.samknows.com,51,16,17.9615,,0.0297,0,17.9615,0,0,0,0,0
+1009424,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-atlanta-us.samknows.com,86,27,15.8715,,0.0008,0,15.8715,0,0,0,0,0
+1009454,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-chicago-us.samknows.com,63,38,15.3033,,0.0035,0,15.3033,0,0,0,0,0
+1010046,Frontier,FL,South,500,500,skwb8,sp1-vm-miami-us.samknows.com,127,99,11.656,1.1474,0.0016,0,11.656,0,0,0,0,0
+1010466,Cincinnati Bell,OH,Midwest,250,100,skwb8,sp2-vm-chicago-us.samknows.com,111,35,14.078,,0.007,0,14.078,0,0,0,0,0
+1011922,Verizon,VA,South,200,200,skwb8,sp1-vm-ashburn-us.samknows.com,124,116,6.5278,1.58,0.0072,1,6.5055,0,0,0,0,0
+3551837,Verizon,PA,Northeast,200,200,skwb8,sp1-vm-ashburn-us.samknows.com,78,68,7.845,0.4644,0.0216,0,7.845,0,0,0,0,0
+3551845,Verizon,VA,South,100,100,skwb8,sp1-vm-ashburn-us.samknows.com,127,111,10.0709,3.6895,0.0043,0,10.0709,0,0,0,0,0
+3551869,Verizon,MD,South,100,100,skwb8,sp1-vm-ashburn-us.samknows.com,120,94,12.6553,2.9715,0.04,1,12.6377,0,0,0,0,0
+3708573,Frontier,TX,South,500,500,skwb8,sp1-vm-dallas-us.samknows.com,140,117,6.7291,1.2038,0.0008,0,6.7291,0,0,0,0,0
+3708677,Frontier,CA,West,500,500,skwb8,sp1-vm-losangeles-us.samknows.com,122,115,4.6819,1.052,0.0008,0,4.6819,0,0,0,0,0
+3766945,Frontier,FL,South,500,500,skwb8,sp1-vm-miami-us.samknows.com,109,73,15.0024,1.1672,0.0009,0,15.0024,0,0,0,0,0
+3782201,Frontier,TX,South,500,500,skwb8,sp1-vm-dallas-us.samknows.com,85,48,4.7598,,0.0,0,4.7598,0,0,0,0,0
+3798741,Verizon,VA,South,200,200,skwb8,sp1-vm-ashburn-us.samknows.com,112,75,7.894,2.538,0.0641,0,7.894,0,0,0,0,0
+3798765,Verizon,PA,Northeast,100,100,skwb8,sp1-vm-newyork-us.samknows.com,92,56,13.2022,3.8132,0.018,1,12.9317,0,0,0,0,0
+3798789,Cincinnati Bell,OH,Midwest,250,100,skwb8,sp2-vm-chicago-us.samknows.com,84,39,14.9692,,0.0049,0,14.9692,0,0,0,0,0
+3798801,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-chicago-us.samknows.com,53,17,11.0696,,0.0065,0,11.0696,0,0,0,0,0
+3814533,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-atlanta-us.samknows.com,50,17,15.5712,,0.0,0,15.5712,0,0,0,0,0
+3814777,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp2-vm-chicago-us.samknows.com,88,69,9.4324,0.5685,0.0131,0,9.4324,0,0,0,0,0
+3814873,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp2-vm-chicago-us.samknows.com,53,22,14.5576,,0.0198,0,14.5576,0,0,0,0,0
+3814893,Cincinnati Bell,KY,South,500,125,skwb8,sp1-vm-atlanta-us.samknows.com,127,85,14.1277,0.5453,0.0004,0,14.1277,0,0,0,0,0
+3814905,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp2-vm-chicago-us.samknows.com,85,37,14.8128,,0.0093,0,14.8128,0,0,0,0,0
+3814917,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-chicago-us.samknows.com,81,16,14.48,,0.0065,0,14.48,0,0,0,0,0
+3880293,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-chicago-us.samknows.com,93,35,11.3198,,0.0078,1,11.303,0,0,0,0,0
+3880401,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp2-vm-chicago-us.samknows.com,98,81,11.4362,0.4205,0.0063,0,11.4362,0,0,0,0,0
+3880653,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp2-vm-chicago-us.samknows.com,98,53,14.2033,0.8616,0.0068,0,14.2033,0,0,0,0,0
+3892917,Cincinnati Bell,KY,South,500,125,skwb8,sp1-vm-chicago-us.samknows.com,68,51,11.0,0.388,0.0,0,11.0,0,0,0,0,0
+3894077,Frontier,IN,Midwest,500,500,skwb8,sp2-vm-chicago-us.samknows.com,134,94,7.0867,0.9507,0.0135,0,7.0867,0,0,0,0,0
+3894181,Frontier,TX,South,500,500,skwb8,sp1-vm-dallas-us.samknows.com,123,52,4.7123,1.3712,0.0008,0,4.7123,0,0,0,0,0
+3898433,Verizon,DE,South,200,200,skwb8,sp2-vm-newyork-us.samknows.com,114,42,18.8299,,0.0678,1,18.478,0,0,0,0,0
+3898529,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-chicago-us.samknows.com,81,39,9.381,,0.0069,0,9.381,0,0,0,0,0
+3898913,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp2-vm-chicago-us.samknows.com,91,89,12.236,0.8728,0.0103,1,12.079,0,0,0,0,0
+3914289,Frontier,CT,Northeast,500,500,skwb8,sp1-vm-newyork-us.samknows.com,76,34,12.5635,,0.019,0,12.5635,0,0,0,0,0
+3952461,Frontier,TX,South,500,500,skwb8,sp1-vm-dallas-us.samknows.com,127,112,3.4467,0.7784,0.0127,0,3.4467,0,0,0,0,0
+3994885,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-atlanta-us.samknows.com,74,43,12.235,,0.0016,0,12.235,0,0,0,0,0
+3994925,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp2-vm-chicago-us.samknows.com,88,63,11.8472,0.8672,0.0126,1,11.8351,0,0,0,0,0
+4172701,Frontier,CA,West,500,500,skwb8,sp1-vm-losangeles-us.samknows.com,122,120,5.5834,1.2087,0.0016,0,5.5834,0,0,0,0,0
+4172713,Frontier,CA,West,500,500,skwb8,sp1-vm-losangeles-us.samknows.com,121,120,4.113,0.4576,0.0284,0,4.113,0,0,0,0,0
+4172725,Frontier,FL,South,500,500,skwb8,sp1-vm-miami-us.samknows.com,120,73,8.9988,0.2986,0.0059,0,8.9988,0,0,0,0,0
+4190285,Verizon,MD,South,100,100,skwb8,sp1-vm-ashburn-us.samknows.com,66,76,50.0035,4.48,0.0459,1,14.7746,1,0,0,1,1
+5281653,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-atlanta-us.samknows.com,94,94,12.4284,0.695,0.0027,0,12.4284,0,0,0,0,0
+22634805,Verizon,VA,South,200,200,skwb8,sp1-vm-ashburn-us.samknows.com,102,108,8.9078,2.6236,0.0036,1,8.8564,0,0,0,0,0
+24195149,Cincinnati Bell,OH,Midwest,250,100,skwb8,sp1-vm-chicago-us.samknows.com,86,57,11.9617,0.5134,0.0083,0,11.9617,0,0,0,0,0
+24329061,Cincinnati Bell,KY,South,250,100,skwb8,sp1-vm-atlanta-us.samknows.com,98,65,14.0751,1.2084,0.0,0,14.0751,0,0,0,0,0
+24329113,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-chicago-us.samknows.com,97,67,11.485,0.7048,0.0073,1,11.059,0,0,0,0,0
+24329557,Cincinnati Bell,OH,Midwest,250,100,skwb8,sp1-vm-ashburn-us.samknows.com,89,46,13.1788,,0.0037,0,13.1788,0,0,0,0,0
+24360105,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-atlanta-us.samknows.com,92,18,15.3354,,0.0033,0,15.3354,0,0,0,0,0
+24525817,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp2-vm-chicago-us.samknows.com,84,43,13.8754,,0.0566,0,13.8754,0,0,0,0,0
+24525893,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-chicago-us.samknows.com,50,16,14.2313,,0.0059,0,14.2313,0,0,0,0,0
+24558841,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-atlanta-us.samknows.com,78,32,15.2423,,0.0023,0,15.2423,0,0,0,0,0
+24558885,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-chicago-us.samknows.com,114,56,10.6831,0.5051,0.008,0,10.6831,0,0,0,0,0
+24558953,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp2-vm-chicago-us.samknows.com,60,45,14.8284,,0.0165,0,14.8284,0,0,0,0,0
+24558989,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp2-vm-chicago-us.samknows.com,115,76,14.0033,0.3731,0.0046,0,14.0033,0,0,0,0,0
+24559045,Cincinnati Bell,OH,Midwest,250,100,skwb8,sp1-vm-chicago-us.samknows.com,120,48,9.187,,0.0148,0,9.187,0,0,0,0,0
+24733221,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-chicago-us.samknows.com,59,25,23.9581,,0.0075,7,22.7268,1,0,0,1,0
+24733257,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-atlanta-us.samknows.com,79,32,15.5882,,0.0,0,15.5882,0,0,0,0,0
+24733281,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp2-vm-chicago-us.samknows.com,74,50,10.0851,2.2545,0.0333,0,10.0851,0,0,0,0,0
+24733397,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-chicago-us.samknows.com,71,39,12.495,,0.0021,0,12.495,0,0,0,0,0
+24733425,Cincinnati Bell,OH,Midwest,250,100,skwb8,sp2-vm-chicago-us.samknows.com,58,52,14.001,0.4802,0.0146,0,14.001,0,0,0,0,0
+24733541,Cincinnati Bell,OH,Midwest,250,100,skwb8,sp1-vm-atlanta-us.samknows.com,79,31,15.8071,,0.0,0,15.8071,0,0,0,0,0
+24734281,Frontier,CA,West,500,500,skwb8,sp1-vm-losangeles-us.samknows.com,130,112,4.1252,0.7801,0.0264,0,4.1252,0,0,0,0,0
+24767653,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-chicago-us.samknows.com,99,67,9.9762,0.7287,0.1764,0,9.9762,0,0,0,0,0
+24767669,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-chicago-us.samknows.com,65,46,9.4016,,0.0101,0,9.4016,0,0,0,0,0
+24767673,Cincinnati Bell,KY,South,500,125,skwb8,sp2-vm-chicago-us.samknows.com,97,60,12.0254,0.4894,0.0092,1,11.1559,0,0,0,0,0
+24767701,Cincinnati Bell,OH,Midwest,250,100,skwb8,sp2-vm-chicago-us.samknows.com,52,34,15.3956,,0.0135,0,15.3956,0,0,0,0,0
+24806509,Frontier,CA,West,500,500,skwb8,sp1-vm-losangeles-us.samknows.com,124,103,7.2904,0.9522,0.0928,0,7.2904,0,0,0,0,0
+24806517,Frontier,FL,South,500,500,skwb8,sp1-vm-miami-us.samknows.com,119,75,16.7829,0.9006,0.018,0,16.7829,0,0,0,0,0
+24806645,Frontier,TX,South,500,500,skwb8,sp1-vm-dallas-us.samknows.com,129,88,7.3434,1.4696,0.0,0,7.3434,0,0,0,0,0
+24806665,Frontier,FL,South,500,500,skwb8,sp1-vm-miami-us.samknows.com,123,73,11.7932,1.1615,0.0,0,11.7932,0,0,0,0,0
+24806681,Frontier,FL,South,500,500,skwb8,sp1-vm-miami-us.samknows.com,130,119,12.5587,0.8811,0.0,0,12.5587,0,0,0,0,0
+24806749,Frontier,TX,South,500,500,skwb8,sp1-vm-dallas-us.samknows.com,50,12,5.1104,,0.0,0,5.1104,0,0,0,0,0
+24806841,Frontier,CA,West,500,500,skwb8,sp1-vm-losangeles-us.samknows.com,139,120,5.712,0.9462,0.0015,0,5.712,0,0,0,0,0
+24806961,Frontier,FL,South,500,500,skwb8,sp1-vm-miami-us.samknows.com,119,81,12.0968,1.14,0.0014,0,12.0968,0,0,0,0,0
+24807017,Frontier,FL,South,500,500,skwb8,sp1-vm-miami-us.samknows.com,129,102,14.1166,0.5194,0.0098,0,14.1166,0,0,0,0,0
+24807141,Frontier,IN,Midwest,500,500,skwb8,sp1-vm-chicago-us.samknows.com,91,50,10.04,1.6982,0.0131,0,10.04,0,0,0,0,0
+24807269,Frontier,TX,South,500,500,skwb8,sp1-vm-dallas-us.samknows.com,109,71,4.6516,1.2342,0.002,0,4.6516,0,0,0,0,0
+24839469,Frontier,FL,South,500,500,skwb8,sp1-vm-miami-us.samknows.com,132,118,11.6884,0.6111,0.0004,0,11.6884,0,0,0,0,0
+24839509,Frontier,TX,South,500,500,skwb8,sp1-vm-dallas-us.samknows.com,127,87,13.9512,1.5301,0.035,0,13.9512,0,0,0,0,0
+24839649,Frontier,TX,South,500,500,skwb8,sp1-vm-dallas-us.samknows.com,120,56,2.6563,0.3541,0.0267,0,2.6563,0,0,0,0,0
+24839733,Frontier,CA,West,500,500,skwb8,sp1-vm-losangeles-us.samknows.com,116,90,7.267,1.4052,0.002,0,7.267,0,0,0,0,0
+24839785,Frontier,FL,South,500,500,skwb8,sp1-vm-miami-us.samknows.com,134,120,12.6632,0.9181,0.0008,0,12.6632,0,0,0,0,0
+24840041,Frontier,CA,West,500,500,skwb8,sp1-vm-losangeles-us.samknows.com,131,106,35.802,3.8932,1.6617,16,35.6054,1,0,1,1,0
+24840653,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-ashburn-us.samknows.com,65,18,15.1398,,0.0035,0,15.1398,0,0,0,0,0
+24869165,Frontier,FL,South,500,500,skwb8,sp1-vm-miami-us.samknows.com,101,65,14.971,1.0634,0.0368,1,14.8906,0,0,0,0,0
+25170409,Verizon,VA,South,100,100,skwb8,sp1-vm-ashburn-us.samknows.com,125,103,12.2324,2.6821,0.0424,0,12.2324,0,0,0,0,0
+25170477,Verizon,NY,Northeast,75,75,skwb8,sp2-vm-newyork-us.samknows.com,90,57,11.6774,2.7616,0.0037,0,11.6774,0,0,0,0,0
+25170505,Verizon,NY,Northeast,75,75,skwb8,sp2-vm-newyork-us.samknows.com,92,53,12.5318,1.5897,0.0162,0,12.5318,0,0,0,0,0
+25170509,Verizon,NY,Northeast,75,75,skwb8,sp1-vm-newyork-us.samknows.com,91,99,9.35,1.1199,0.0075,0,9.35,0,0,0,0,0
+25314109,Verizon,NJ,Northeast,100,100,skwb8,sp1-vm-newyork-us.samknows.com,68,39,13.2484,,0.0904,0,13.2484,0,0,0,0,0
+25314177,Verizon,NY,Northeast,75,75,skwb8,sp1-vm-newyork-us.samknows.com,62,17,30.4847,,0.0017,9,23.0922,1,0,0,1,0
+25314253,Verizon,NJ,Northeast,100,100,skwb8,sp2-vm-newyork-us.samknows.com,92,51,12.4316,1.3508,0.0422,1,12.2022,0,0,0,0,0
+25314289,Verizon,PA,Northeast,75,75,skwb8,sp2-vm-newyork-us.samknows.com,66,40,13.7132,,0.0045,0,13.7132,0,0,0,0,0
+25314293,Verizon,NY,Northeast,75,75,skwb8,sp1-vm-newyork-us.samknows.com,83,63,9.5816,1.4714,0.0,0,9.5816,0,0,0,0,0
+25619365,Cincinnati Bell,KY,South,500,125,skwb8,sp1-vm-atlanta-us.samknows.com,66,55,13.412,1.2265,0.0,0,13.412,0,0,0,0,0
+25658001,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp2-vm-chicago-us.samknows.com,68,76,9.4198,0.3705,0.019,0,9.4198,0,0,0,0,0
+25658013,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-chicago-us.samknows.com,68,27,11.2706,,0.0016,0,11.2706,0,0,0,0,0
+25658105,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp2-vm-chicago-us.samknows.com,123,76,12.8823,1.1381,0.0268,1,12.475,0,0,0,0,0
+25658121,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-chicago-us.samknows.com,107,33,9.3507,,0.0051,0,9.3507,0,0,0,0,0
+25658129,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-chicago-us.samknows.com,65,55,10.9802,1.3,0.0091,0,10.9802,0,0,0,0,0
+25658141,Cincinnati Bell,KY,South,500,125,skwb8,sp2-vm-chicago-us.samknows.com,67,31,12.5049,,0.0164,1,12.1979,0,0,0,0,0
+25658145,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp2-vm-chicago-us.samknows.com,56,38,14.357,,0.0092,0,14.357,0,0,0,0,0
+25754677,Frontier,CA,West,500,500,skwb8,sp1-vm-losangeles-us.samknows.com,139,119,8.9416,0.4884,0.1205,0,8.9416,0,0,0,0,0
+25754945,Frontier,CT,Northeast,500,500,skwb8,sp1-vm-ashburn-us.samknows.com,85,75,11.0792,0.5408,0.0052,0,11.0792,0,0,0,0,0
+25755141,Verizon,MD,South,100,100,skwb8,sp1-vm-ashburn-us.samknows.com,74,65,12.5403,2.9292,0.0114,1,12.0116,0,0,0,0,0
+25755169,Verizon,RI,Northeast,200,200,skwb8,sp1-vm-newyork-us.samknows.com,123,79,13.1845,0.6932,0.031,0,13.1845,0,0,0,0,0
+25834689,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-chicago-us.samknows.com,80,59,9.6122,0.5207,0.0079,0,9.6122,0,0,0,0,0
+25886369,Verizon,PA,Northeast,75,75,skwb8,sp2-vm-newyork-us.samknows.com,96,34,16.393,,0.0229,1,16.049,0,0,0,0,0
+26114281,Frontier,AL,South,500,500,skwb8,sp1-vm-dallas-us.samknows.com,91,83,4.7095,1.0763,0.1325,0,4.7095,0,0,0,0,0
+26226097,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp2-vm-chicago-us.samknows.com,121,47,9.576,,0.0091,0,9.576,0,0,0,0,0
+26397869,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp2-vm-chicago-us.samknows.com,82,45,15.2289,,0.0094,0,15.2289,0,0,0,0,0
+26437409,Verizon,PA,Northeast,75,75,skwb8,sp2-vm-newyork-us.samknows.com,65,86,17.9052,3.0128,0.0119,0,17.9052,0,0,0,0,0
+26490397,Cincinnati Bell,OH,Midwest,250,100,skwb8,sp1-vm-atlanta-us.samknows.com,64,60,15.098,0.2509,0.0,0,15.098,0,0,0,0,0
+26490401,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp2-vm-chicago-us.samknows.com,54,35,14.4594,,0.1495,0,14.4594,0,0,0,0,0
+26490529,Verizon,MA,Northeast,100,100,skwb8,sp2-vm-newyork-us.samknows.com,81,28,18.184,,0.0197,1,17.8432,0,0,0,0,0
+26748541,Verizon,NJ,Northeast,75,75,skwb8,sp2-vm-newyork-us.samknows.com,73,86,11.9902,1.0891,0.004,0,11.9902,0,0,0,0,0
+32180549,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-atlanta-us.samknows.com,65,34,15.1178,,0.0,0,15.1178,0,0,0,0,0
+33658777,Cincinnati Bell,KY,South,500,125,skwb8,sp2-vm-chicago-us.samknows.com,75,51,13.5254,1.194,0.0108,1,12.2579,0,0,0,0,0
+35457057,Verizon,MD,South,200,200,skwb8,sp1-vm-ashburn-us.samknows.com,85,76,8.108,2.5005,0.0064,0,8.108,0,0,0,0,0
+35787417,Verizon,NY,Northeast,75,75,skwb8,sp2-vm-newyork-us.samknows.com,83,55,7.7385,2.4543,0.0,0,7.7385,0,0,0,0,0
+36509057,Frontier,FL,South,500,500,skwb8,sp1-vm-miami-us.samknows.com,117,87,14.4536,1.4048,0.018,0,14.4536,0,0,0,0,0
+37320893,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-atlanta-us.samknows.com,60,43,14.917,,0.0,0,14.917,0,0,0,0,0
+37383545,Cincinnati Bell,OH,Midwest,250,100,skwb8,sp2-vm-chicago-us.samknows.com,87,49,9.3837,,0.0111,0,9.3837,0,0,0,0,0
+37383565,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp2-vm-chicago-us.samknows.com,96,48,15.4258,,0.004,0,15.4258,0,0,0,0,0
+37383577,Cincinnati Bell,OH,Midwest,250,100,skwb8,sp2-vm-chicago-us.samknows.com,69,56,10.4146,1.2275,0.0,0,10.4146,0,0,0,0,0
+37383645,Cincinnati Bell,KY,South,500,125,skwb8,sp1-vm-ashburn-us.samknows.com,72,56,14.3634,1.0092,0.0043,0,14.3634,0,0,0,0,0
+37383721,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-atlanta-us.samknows.com,82,32,15.3998,,0.0199,0,15.3998,0,0,0,0,0
+37692901,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-chicago-us.samknows.com,123,43,12.5839,,0.0099,1,12.495,0,0,0,0,0
+37991977,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp2-vm-chicago-us.samknows.com,62,32,13.9129,,0.4798,0,13.9129,0,0,0,0,0
+37992169,Verizon,VA,South,200,200,skwb8,sp1-vm-ashburn-us.samknows.com,100,51,5.4958,0.9055,0.0031,1,5.301,0,0,0,0,0
+37992197,Verizon,MA,Northeast,200,200,skwb8,sp2-vm-newyork-us.samknows.com,61,47,13.195,,0.0011,0,13.195,0,0,0,0,0
+38098085,Cincinnati Bell,OH,Midwest,250,100,skwb8,sp1-vm-chicago-us.samknows.com,112,33,12.176,,0.0046,0,12.176,0,0,0,0,0
+38098197,Frontier,TX,South,500,500,skwb8,sp1-vm-dallas-us.samknows.com,146,118,3.9985,0.6699,0.0017,0,3.9985,0,0,0,0,0
+38098273,Frontier,TX,South,500,500,skwb8,sp1-vm-dallas-us.samknows.com,118,74,3.2242,0.597,0.0128,0,3.2242,0,0,0,0,0
+38098285,Frontier,CA,West,500,500,skwb8,sp1-vm-losangeles-us.samknows.com,76,51,6.9878,0.763,0.3486,0,6.9878,0,0,0,0,0
+38098293,Frontier,FL,South,500,500,skwb8,sp1-vm-miami-us.samknows.com,120,89,13.4718,1.1319,0.0012,0,13.4718,0,0,0,0,0
+38098497,Frontier,FL,South,500,500,skwb8,sp1-vm-miami-us.samknows.com,134,108,12.4567,1.1929,0.0487,1,12.4396,0,0,0,0,0
+38098501,Frontier,TX,South,500,500,skwb8,sp1-vm-dallas-us.samknows.com,137,108,7.301,1.6413,0.1649,0,7.301,0,0,0,0,0
+38407129,Cincinnati Bell,KY,South,500,125,skwb8,sp1-vm-chicago-us.samknows.com,86,60,13.2392,1.1568,0.0039,1,12.8776,0,0,0,0,0
+38616701,Cincinnati Bell,OH,Midwest,250,100,skwb8,sp1-vm-chicago-us.samknows.com,67,72,9.075,0.5321,0.0026,0,9.075,0,0,0,0,0
+38616705,Cincinnati Bell,OH,Midwest,250,100,skwb8,sp1-vm-atlanta-us.samknows.com,86,52,14.5805,0.3188,0.0138,0,14.5805,0,0,0,0,0
+38616769,Frontier,CA,West,500,500,skwb8,sp1-vm-losangeles-us.samknows.com,124,117,7.748,0.9828,0.0517,0,7.748,0,0,0,0,0
+38616777,Frontier,FL,South,500,500,skwb8,sp1-vm-miami-us.samknows.com,123,76,12.3906,1.1852,0.001,0,12.3906,0,0,0,0,0
+38966229,Frontier,FL,South,500,500,skwb8,sp1-vm-miami-us.samknows.com,133,100,10.5924,0.2896,0.016,0,10.5924,0,0,0,0,0
+38966261,Verizon,RI,Northeast,200,200,skwb8,sp1-vm-newyork-us.samknows.com,66,52,12.2278,1.3796,0.0015,0,12.2278,0,0,0,0,0
+39011053,Frontier,CA,West,500,500,skwb8,sp1-vm-losangeles-us.samknows.com,52,24,4.0429,,0.0578,0,4.0429,0,0,0,0,0
+39287697,Verizon,NY,Northeast,100,100,skwb8,sp2-vm-newyork-us.samknows.com,64,52,13.4749,2.8571,0.0072,0,13.4749,0,0,0,0,0
+39876837,Frontier,CA,West,500,500,skwb8,sp1-vm-losangeles-us.samknows.com,98,81,5.0144,0.7985,0.0378,0,5.0144,0,0,0,0,0
+40206065,Frontier,TX,South,500,500,skwb8,sp1-vm-dallas-us.samknows.com,140,118,4.2555,1.1935,0.0004,0,4.2555,0,0,0,0,0
+40729705,Frontier,CA,West,500,500,skwb8,sp1-vm-losangeles-us.samknows.com,128,105,9.5872,1.1083,0.0007,0,9.5872,0,0,0,0,0
+40729713,Frontier,FL,South,500,500,skwb8,sp1-vm-miami-us.samknows.com,128,84,14.252,1.4479,0.0014,0,14.252,0,0,0,0,0
+40729725,Frontier,TX,South,500,500,skwb8,sp1-vm-dallas-us.samknows.com,51,27,6.8475,,0.0,0,6.8475,0,0,0,0,0
+40729793,Frontier,CA,West,500,500,skwb8,sp1-vm-losangeles-us.samknows.com,72,108,3.3132,2.2713,0.011,0,3.3132,0,0,0,0,0
+52491969,Verizon,NJ,Northeast,200,200,skwb8,sp2-vm-newyork-us.samknows.com,108,104,3.8292,0.8393,0.0409,0,3.8292,0,0,0,0,0
+54730205,Cincinnati Bell,OH,Midwest,250,100,skwb8,sp2-vm-chicago-us.samknows.com,89,45,13.249,,0.0056,0,13.249,0,0,0,0,0
+54730273,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp1-vm-chicago-us.samknows.com,86,62,12.9957,0.9021,0.009,1,11.977,0,0,0,0,0
+54730393,Cincinnati Bell,OH,Midwest,250,100,skwb8,sp2-vm-chicago-us.samknows.com,85,44,12.8552,,0.0079,1,12.38,0,0,0,0,0
+54730425,Cincinnati Bell,OH,Midwest,250,100,skwb8,sp2-vm-chicago-us.samknows.com,92,72,9.611,0.2977,0.0098,0,9.611,0,0,0,0,0
+55105125,Frontier,CA,West,500,500,skwb8,sp1-vm-losangeles-us.samknows.com,91,96,4.1035,0.9784,0.0544,0,4.1035,0,0,0,0,0
+55105449,Cincinnati Bell,OH,Midwest,500,125,skwb8,sp2-vm-chicago-us.samknows.com,54,44,14.4516,,0.0051,0,14.4516,0,0,0,0,0
+55458553,Verizon,VA,South,75,75,skwb8,sp1-vm-ashburn-us.samknows.com,79,47,12.0339,,0.0189,0,12.0339,0,0,0,0,0
+55458557,Verizon,MD,South,200,200,skwb8,sp1-vm-ashburn-us.samknows.com,87,67,10.598,2.7165,0.028,1,10.1536,0,0,0,0,0
+55458561,Verizon,MA,Northeast,75,75,skwb8,sp1-vm-newyork-us.samknows.com,98,63,16.5418,1.1264,0.0008,0,16.5418,0,0,0,0,0
+55492133,Verizon,VA,South,200,200,skwb8,sp1-vm-ashburn-us.samknows.com,98,105,7.4313,0.9958,0.0017,2,6.1402,0,0,0,0,0
+55492141,Verizon,MA,Northeast,200,200,skwb8,sp1-vm-newyork-us.samknows.com,75,50,12.7696,2.5111,0.0,0,12.7696,0,0,0,0,0
+55492149,Verizon,NY,Northeast,75,75,skwb8,sp1-vm-newyork-us.samknows.com,78,24,7.2991,,0.0028,0,7.2991,0,0,0,0,0
+55492185,Verizon,PA,Northeast,200,200,skwb8,sp1-vm-newyork-us.samknows.com,107,53,12.3577,2.9698,0.0363,0,12.3577,0,0,0,0,0
+55492197,Verizon,MA,Northeast,200,200,skwb8,sp2-vm-newyork-us.samknows.com,112,64,11.1359,0.6011,0.0243,0,11.1359,0,0,0,0,0
+55492217,Verizon,NY,Northeast,75,75,skwb8,sp2-vm-newyork-us.samknows.com,102,49,10.0461,,0.0127,0,10.0461,0,0,0,0,0
+55492221,Verizon,VA,South,200,200,skwb8,sp1-vm-ashburn-us.samknows.com,125,119,8.3278,2.5259,0.007,1,7.936,0,0,0,0,0
+55492257,Verizon,MD,South,75,75,skwb8,sp1-vm-ashburn-us.samknows.com,125,116,8.2858,2.5911,0.0031,2,8.23,0,0,0,0,0
+55492353,Verizon,VA,South,75,75,skwb8,sp1-vm-ashburn-us.samknows.com,118,74,16.4494,3.2061,0.0143,4,13.7664,0,0,0,0,0
+55492385,Verizon,MD,South,200,200,skwb8,sp1-vm-ashburn-us.samknows.com,126,108,4.6462,1.7718,0.0019,0,4.6462,0,0,0,0,0
+55492413,Verizon,PA,Northeast,75,75,skwb8,sp1-vm-ashburn-us.samknows.com,126,120,14.537,1.2799,0.0094,0,14.537,0,0,0,0,0
+55492441,Verizon,NJ,Northeast,75,75,skwb8,sp2-vm-newyork-us.samknows.com,98,73,18.1996,2.7303,0.034,0,18.1996,0,0,0,0,0
+55518753,Verizon,PA,Northeast,200,200,skwb8,sp1-vm-newyork-us.samknows.com,88,42,13.9478,,0.0105,0,13.9478,0,0,0,0,0
+55518837,Verizon,VA,South,200,200,skwb8,sp1-vm-ashburn-us.samknows.com,99,60,9.413,4.0073,0.0292,1,9.2503,0,0,0,0,0
+55519265,Verizon,VA,South,200,200,skwb8,sp1-vm-ashburn-us.samknows.com,125,83,9.458,1.7683,0.005,0,9.458,0,0,0,0,0
+79301237,Cincinnati Bell,OH,Midwest,250,100,skwb8p,sp2-vm-chicago-us.samknows.com,105,18,10.6358,,0.0081,0,10.6358,0,0,0,0,0
+79301241,Cincinnati Bell,OH,Midwest,250,100,skwb8p,sp1-vm-chicago-us.samknows.com,95,43,11.3352,,0.0044,1,11.329,0,0,0,0,0
+79301245,Cincinnati Bell,KY,South,500,125,skwb8p,sp1-vm-atlanta-us.samknows.com,77,47,13.439,,0.0,0,13.439,0,0,0,0,0
