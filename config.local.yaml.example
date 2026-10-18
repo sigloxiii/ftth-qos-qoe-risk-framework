@@ -1,0 +1,3 @@
+  # config.local.yaml.example - copy to config.local.yaml and edit (config.local.yaml is gitignored)
+  inputs:
+    raw_dir: "D:/Capstone FTTH/data/raw/validated-data-sept2022"

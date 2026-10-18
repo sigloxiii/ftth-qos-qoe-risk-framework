@@ -90,6 +90,7 @@ All metrics use **only records inside the peak window** and, in the base case, o
 - **Ratio of sums:** weights each test by its number of packets. Averaging per-row percentages biases the result when the packet count varies.
 - **Jitter minimum (D-07):** `N_MIN_JITTER = 50` (set in `config.yaml`), peak jitter records on the primary server. A unit below it keeps its latency and loss metrics and stays in the denominator; its jitter is null, never 0, and the count of such units is reported with every result.
 - **Jitter unit:** µs, supported indirectly (section 2, item 9) and not documented by the FCC. Jitter is dominated by the upstream value (raw medians: `jitter_up` 1,220, `jitter_down` 86), so the average of both mostly reflects upload (section 11).
+- **Ties in the worst day (D-10):** when several dates share the maximum number of records above the threshold, the earliest date is removed, so the result is reproducible. The value can depend on that choice: unit 24733221 has 3 tied dates (2022-09-18, 09-20, 10-11; P95 without worst day 22.73 removing the earliest) and unit 24840041 has 6 tied dates (35.61 removing 2022-09-12). Neither conclusion changes (both stay above 20 ms, persistent).
 - **Descriptive columns (D-10):** `n_days_above_threshold` and `p95_latency_without_worst_day_ms` are computed for every analyzed unit, on the same records as `p95_latency_ms`. They are not part of `risk_flag`.
 
 ### 5.1 Loss source

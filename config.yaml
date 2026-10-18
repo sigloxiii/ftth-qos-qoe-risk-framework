@@ -240,5 +240,7 @@ output:
   processed_dir: "data/processed/"
   unit_metrics_file: "ftth_qoe_unit_metrics.csv"
   insufficient_data_file: "units_insufficient_data.csv"
+  variants_file: "variants_matrix.csv"            # 2x2 time reading x server rule (written by pipeline.py)
+  sensitivity_file: "sensitivity_grid.csv"         # D-08 grid (written by pipeline.py)
   unit_metrics_columns: ["unit_id", "isp", "state", "census", "download_mbps", "upload_mbps", "whitebox_model", "primary_target", "n_peak_records", "n_peak_jitter_records", "p95_latency_ms", "p95_jitter_ms", "loss_pct", "n_days_above_threshold", "p95_latency_without_worst_day_ms", "flag_latency", "flag_jitter", "flag_loss", "risk_flag", "risk_severe"]   # spec section 9
   reconciliation_doc: "docs/reconciliation.md"

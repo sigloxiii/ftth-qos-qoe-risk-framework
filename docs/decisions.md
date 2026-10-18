@@ -18,8 +18,6 @@
 | D-09 | Jitter stays in the risk rule; base thresholds are not adjusted to the results | 2026-10-15 | Accepted | `step_9.py` (diagnostics 2, 3) |
 | D-10 | Episodic latency events: rule unchanged, two descriptive columns | 2026-10-15 | Accepted | `step_10.py`, `step_11.py` |
 
-D-06 to D-10 were first labeled D1 to D5 in the 2026-10-15 audit.
-
 ---
 
 ## D-01 Analysis period
