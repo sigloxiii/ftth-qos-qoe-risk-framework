@@ -1,7 +1,7 @@
 # FTTH QoE Risk Analysis - Executive Project Brief
 ### Capstone: Google Data Analytics + FCC MBA Data | 2022-09-12 to 2022-10-31 | Methodology v3.0
 
-> Quick technical cheat-sheet and business context for non-technical readers. Source of truth for every rule and value: `docs/metrics_spec.md` (v1.1.0) and `config.yaml`.
+> Quick technical cheat-sheet and business context for non-technical readers. Source of truth for every rule and value: `docs/metrics_spec.md` (v1.2.0) and `config.yaml`.
 
 ---
 
@@ -11,7 +11,7 @@ Imagine you are a fiber ISP (FTTH). Some of your homes have a small white box (W
 
 The question: in the local evening peak (19:00-22:59), when many people stream, game and video-call, which homes show degraded quality? And how much of that degradation is real, versus an artifact of the measuring device or of the analysis?
 
-**Key result:** pending. The scope is 258 FTTH units. The number of units analyzed and the number at risk will be published only after the pipeline run and the Python ↔ Power BI reconciliation are complete (see the README roadmap). Figures from earlier versions (v1, v2.x) are invalid and are not reused.
+**Key result:** pending. The scope is 258 FTTH units. The number of units analyzed and the number at risk will be published only after the Python ↔ Power BI reconciliation is complete (the pipeline and its automated tests are already done; see the README roadmap). Figures from earlier versions (v1, v2.x) are invalid and are not reused.
 
 ### 2. What does each record measure? (No jargon)
 
@@ -98,4 +98,4 @@ Financial impact (churn, truck rolls) is not estimated: there is no source for t
 - Two months of data from a non-random sample of volunteer units; results do not represent all FTTH subscribers.
 - 220 of the 258 units (85%) are in the US Eastern time zone.
 - The local-time reading of `dtime` rests on indirect evidence and contradicts the FCC general note.
-- The jitter unit (µs) is plausible but not proven.
+- The jitter unit (µs) is supported indirectly (per-unit jitter against `rtt_std`) but not documented by the FCC, and jitter is dominated by the upstream value. It is evaluated only for units with at least 50 peak jitter records (decision D-07); the rest are scored on latency and loss.

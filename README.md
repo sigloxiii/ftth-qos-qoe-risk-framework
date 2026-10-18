@@ -25,7 +25,7 @@ The analysis focuses on three metrics measured in the local evening peak window:
 
 **Why P95 instead of the average?** The average hides the tail: a unit can have a 15 ms average latency and still show much higher values in a share of its hours. The 95th percentile (P95) is the value that 95% of the measurements do not exceed, so it describes the poorer end of the distribution, where bad QoE lives. Each `rtt_avg` value is itself the average of one hourly test, so the P95 here summarizes the *hourly averages*; spikes inside a single test are only visible in `rtt_max`.
 
-**Current status:** Methodology v3 is specified (`docs/metrics_spec.md` v1.2.0, decisions D-01 to D-10) and the data inspection (Step 0) and the exploration scripts (`src/steps/step_0.py` to `step_11.py`) are complete. The single pipeline (`src/pipeline.py`), the automated tests and the Power BI reconciliation are still to be built. **No results are published yet.** The provisional base-case figures from the exploration scripts are in [`docs/procedure_summary_v3.md`](docs/procedure_summary_v3.md); they become results only after the pipeline reproduces them unit by unit and the Python ↔ Power BI reconciliation is complete.
+**Current status:** Methodology v3 is specified (`docs/metrics_spec.md` v1.2.0, decisions D-01 to D-10) and the data inspection (Step 0) and the exploration scripts (`src/steps/step_0.py` to `step_11.py`) are complete. The single pipeline (`src/pipeline.py`) and its automated tests (`tests/`, 21 passing) are complete, and the pipeline reproduces the exploration figures unit by unit. The Power BI reconciliation is still to be built. **No results are published yet:** the base-case figures in [`docs/procedure_summary_v3.md`](docs/procedure_summary_v3.md) and `data/processed/` become results only after the Python ↔ Power BI reconciliation is complete.
 
 ## 2. Why Version 3 Was Necessary
 
@@ -102,7 +102,7 @@ Full definitions are in [`docs/metrics_spec.md`](docs/metrics_spec.md) v1.2.0 an
 - `risk_severe` second tier separates extreme cases.
 - **D-10:** the rule does not change for episodic events. A latency flag is described as *episodic* when the P95 without the worst day falls to the threshold or below, and *persistent* otherwise (descriptive only).
 - **D-08:** sensitivity grid reported with every result per `thresholds.sensitivity`: latency [20, 30, 50] × jitter [3, 4, 5] × loss [0.05, 0.1, 0.5, 1.0] × `N_MIN` [30, 50, 100], plus the UTC reading and all-servers variants.
-- Provisional base case (D-03 local + D-04 primary server, from `step_9.py`): 237 analyzed / 21 insufficient / 5 at risk (2.1%); between 1 and 7 at risk depending on `N_MIN`. Not published as a result until the pipeline reproduces it (see `docs/procedure_summary_v3.md`, section 5).
+- Provisional base case (D-03 local + D-04 primary server; `pipeline.py` reproduces `step_9.py`): 237 analyzed / 21 insufficient / 5 at risk (2.1%), 4 persistent and 1 episodic (D-10); between 1 and 7 at risk depending on `N_MIN`. Not published as a result until the Python ↔ Power BI reconciliation is complete (see `docs/procedure_summary_v3.md`, section 5).
 
 ## 4. Repository Structure
 
@@ -120,7 +120,7 @@ ftth-qoe-capstone/
 │   ├── unit-profile-sept2022.xlsx   # FCC unit profile (source)
 │   ├── CSV_previews.md      # first 10 rows of raw files (verified structure)
 │   ├── interim/             # CSV intermediates created by step_1.py, gitignored
-│   └── processed/           # (planned) ftth_qoe_unit_metrics.csv, units_insufficient_data.csv, data_quality_log.csv
+│   └── processed/           # pipeline output: ftth_qoe_unit_metrics.csv, units_insufficient_data.csv, data_quality_log.csv, variants_matrix.csv, sensitivity_grid.csv
 ├── docs/
 │   ├── metrics_spec.md      # source of truth v1.2.0 for all metrics
 │   ├── decisions.md         # decision log D-01 to D-10 with alternatives and evidence
@@ -135,11 +135,11 @@ ftth-qoe-capstone/
 ├── src/
 │   ├── README.md            # script map and how to run the steps
 │   ├── steps/               # step_0.py ... step_11.py: exploration scripts, one per decision or check
-│   └── pipeline.py          # (planned) single implementation; reads config.yaml and the config.local.yaml override
-├── tests/                   # (planned) test_qoe.py, test_population.py: population 258/27, no overlap, loss range, n_min, jitter nulls, D-10 columns
+│   └── pipeline.py          # single implementation; reads config.yaml and the config.local.yaml override
+├── tests/                   # test_unit_metrics.py: 21 checks on data/processed (population 258/27, N_MIN, jitter nulls, loss range, flags, D-10 columns, base-case reference)
 ├── powerbi/                 # (planned) dashboard, consumes processed data only
 ├── config.yaml              # single source of truth for values (methodology 3.0, spec 1.2.0, raw_dir: null)
-├── requirements.txt         # pandas, numpy, pyyaml, openpyxl, python-dateutil, tqdm
+├── requirements.txt         # pandas, numpy, pyyaml, openpyxl, python-dateutil, tqdm, pytest
 └── LICENSE
 ```
 
@@ -160,8 +160,8 @@ Raw data: FCC MBA validated data, 2022 release (13th Measuring Broadband America
 2. Create `config.local.yaml` (example in section 4) and set `raw_dir`.
 3. Install dependencies: `pip install -r requirements.txt`
 4. Exploration scripts (available now): run `python src/steps/step_1.py` first (it creates the interim CSVs from the raw files), then any other step. They print to the console; the recorded output of each is in its `OUTPUT` docstring. The scripts read absolute Windows paths (`BASE`, `RAW`, `INTERIM`) that must be edited to run elsewhere (see `src/README.md`).
-5. *(planned)* Run the pipeline: `python src/pipeline.py`, which writes `data/processed/` and must reproduce the figures in `docs/procedure_summary_v3.md` unit by unit.
-6. *(planned)* Validate with tests: `pytest tests/` - population 258/27, allowed timezone offsets [-4,-5,-7], loss range, no fillna(0), duplicate policy, jitter null only below the minimum, D-10 columns.
+5. Run the pipeline: `python src/pipeline.py`. The first run reads the raw files (several minutes) and caches the FTTH rows in `data/interim/pipeline_*_ftth.csv`; later runs reuse the cache (`--refresh-cache` re-reads the raw files, `--no-variants` skips the 2×2 matrix and the D-08 grid). It writes the five files of `data/processed/` and reproduces the figures in `docs/procedure_summary_v3.md` unit by unit.
+6. Validate with tests: `python -m pytest tests -v` (run from the repository root, after step 5). 21 checks: population 258/27 and exclusion files, `N_MIN`, jitter null only below the minimum and never 0, loss range, flags against thresholds, D-10 columns, data-quality log, and the base-case reference (237 / 21 / 5).
 7. *(planned)* Reconcile Power BI: Power BI consumes ONLY `data/processed/` and is compared per `Unit ID` with the tolerances of `docs/metrics_spec.md` section 8 (±0.001 ms for P95 latency and jitter, ±0.001 percentage points for loss, exact match for `risk_flag`), saved in `docs/reconciliation.md`.
 
 ## 6. Roadmap
@@ -175,8 +175,8 @@ Raw data: FCC MBA validated data, 2022 release (13th Measuring Broadband America
 - [x] Data inspection of raw files and Step 0 checks - `docs/data_inspection.md`
 - [x] Exploration scripts and sensitivity analysis (Step 0 to Step 11) - `src/steps/`, `docs/procedure_summary_v3.md`
 - [x] Threshold and sensitivity grid selection from observed distributions - D-08, D-09, `thresholds.sensitivity`
-- [ ] Pipeline: raw → unit-level metrics (CSV) with DQ log - `src/pipeline.py`
-- [ ] Automated tests - `tests/`
+- [x] Pipeline: raw → unit-level metrics (CSV) with DQ log - `src/pipeline.py`, `data/processed/`
+- [x] Automated tests (21 passing) - `tests/test_unit_metrics.py`
 - [ ] Power BI dashboard and unit-level Python ↔ Power BI reconciliation - `powerbi/`, `docs/reconciliation.md`
 - [ ] Results and findings section
 

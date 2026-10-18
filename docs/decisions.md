@@ -1,6 +1,6 @@
 # Decision Log
 
-**Version:** 1.1.0 · **Last updated:** 2026-10-15
+**Version:** 1.1.0 · **Last updated:** 2026-10-18
 **Purpose:** Record each methodological decision with its alternatives, evidence and impact, so any result can be traced to a justified choice. A decision is changed only by adding a new entry that supersedes it; the metrics specification (`docs/metrics_spec.md`) and `config.yaml` are updated in the same commit.
 
 **Status values:** Accepted · Superseded
@@ -69,7 +69,7 @@ These counts come from `step_6.py`, which does not apply `N_MIN`. With `N_MIN` a
 
 **Impact:** 6 units change flag between readings (943226, 1006958, 3798765, 4190285, 24840041, 25314149): 5 flagged only under local, 1 only under UTC. With `N_MIN` applied (`step_9.py`), 12 units change risk status or qualification between the two readings. The unit-profile offsets stay verified but are not used in the base case.
 
-**Files updated:** `config.yaml` (`time` block), `data_dictionary.md` v1.2.0 (section 4, checks 3 and 4), `metrics_spec.md` section 3 (pending).
+**Files updated:** `config.yaml` (`time` block), `data_dictionary.md` v1.2.0 (section 4, checks 3 and 4), `metrics_spec.md` section 3 (done in spec 1.1.0).
 
 ## D-04 Server rule
 
@@ -146,14 +146,14 @@ These counts come from `step_6.py`, which does not apply `N_MIN`. With `N_MIN` a
 
 **Report wording:** a latency flag is called *episodic* when `p95_latency_without_worst_day_ms <= latency_p95_ms`, and *persistent* otherwise. The label is descriptive only: it is not part of `risk_flag` and does not change any count. Base case: **5 at risk, 4 persistent and 1 episodic.**
 
-**Evidence** (`step_10.py`, `step_11.py`; base case local time + primary server)
+**Evidence** (`step_10.py`, `step_11.py`, `pipeline.py`; base case local time + primary server). The last column comes from `pipeline.py`, which applies the tie rule (earliest date); `step_11.py` broke ties without a stated rule (see `step_11_1.py`).
 
 | Unit | Peak records | Records > 20 ms | Days > 20 ms | P95 (ms) | P95 without worst day (ms) | Type |
 | :--- | ---: | ---: | ---: | ---: | ---: | :--- |
 | 943226 | 53 | 11 | 9 | 23.13 | 22.86 | Persistent |
 | 4190285 | 66 | 6 | 1 | 50.00 | 14.77 | Episodic |
-| 24733221 | 59 | 10 | 7 | 23.96 | 23.98 | Persistent |
-| 24840041 | 131 | 44 | 16 | 35.80 | 35.81 | Persistent |
+| 24733221 | 59 | 10 | 7 | 23.96 | 22.73 | Persistent |
+| 24840041 | 131 | 44 | 16 | 35.80 | 35.61 | Persistent |
 | 25314177 | 62 | 28 | 9 | 30.48 | 23.09 | Persistent |
 
 - Unit 4190285: all 6 records above 30 ms fall on 2022-10-23. Its RTT rose from about 14 ms to 53-57 ms between 18:00 and 21:00 (`dtime` hour), started near 16:00 (about 32 ms) and returned to 12.5 ms at 23:00. The other 69 units that use the same server (`sp1-vm-ashburn-us`) stayed at 8.4-9.7 ms that day, so the event is not a server event. The cause (line, local network or unit-specific route) cannot be determined from these data.
@@ -186,5 +186,5 @@ Base case flags: latency 5, jitter 0, loss 1 (unit 24840041), severe 1 (unit 419
 - Jitter unit (µs): supported indirectly. Per-unit median jitter 0.70 ms against median `rtt_std` 0.96 ms (median ratio 0.83, Spearman 0.816, `step_10.py`), but no documentation states it. Keep it under Limitations. The documented test length (10 s) differs from the observed `duration` (about 15 s) and remains open.
 - Jitter is dominated by the upstream value (raw medians: `jitter_up` 1,220, `jitter_down` 86), so `(jitter_up + jitter_down) / 2` mostly reflects upload. State it under Limitations.
 - Time convention for Fiber was not tested (only 18 Pacific units); the local reading rests on Cable and DSL.
-- Pending updates for D-06 to D-10 in `metrics_spec.md` (sections 5, 7, 9, 13 and Changelog), `config.yaml` (loss grid, jitter minimum, new columns) and `data_inspection.md`.
+- Documents aligned with D-06 to D-10 on 2026-10-18: `metrics_spec.md` 1.2.0, `config.yaml`, `data_dictionary.md` 1.3.0, `data_inspection.md`, `procedure_summary_v3.md`, `README.md`; `pipeline.py` and `tests/` implement them.
 - Check 6 is closed: `successes + failures` ranges from 50 to 2,401 per row (P1 = 65, median 2,065), which supports the ratio of sums.

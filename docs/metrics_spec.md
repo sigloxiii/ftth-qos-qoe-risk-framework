@@ -1,6 +1,6 @@
 # Metrics Specification — FTTH QoE Risk
 
-**Spec version:** 1.2.0 · **Last updated:** 2026-10-15
+**Spec version:** 1.2.0 · **Last updated:** 2026-10-18
 **Status:** Baseline. Any change is made first in this document, then in `config.yaml` and `src/`, and recorded in the Changelog (section 12).
 **Central rule:** one implementation of each transformation (Python). Power BI does **not** recalculate metrics; it only visualizes them.
 
@@ -164,7 +164,7 @@ Power Query equivalent of the base peak window: `Time.Hour([dtime]) >= 19 and Ti
 
 ## 9. Final Dataset Schema
 
-`data/processed/ftth_qoe_unit_metrics.csv` (UTF-8, no version in the name; versions live in git tags):
+`data/processed/ftth_qoe_unit_metrics.csv` (UTF-8, no version in the name; versions live in git tags). Metric columns (`p95_latency_ms`, `p95_jitter_ms`, `loss_pct`, `p95_latency_without_worst_day_ms`) are written with 4 decimals; flags are computed before rounding, and the rounding error (at most 0.00005) is far below the reconciliation tolerance of 0.001:
 
 `unit_id, isp, state, census, download_mbps, upload_mbps, whitebox_model, primary_target, n_peak_records, n_peak_jitter_records, p95_latency_ms, p95_jitter_ms, loss_pct, n_days_above_threshold, p95_latency_without_worst_day_ms, flag_latency, flag_jitter, flag_loss, risk_flag, risk_severe`
 
@@ -207,6 +207,7 @@ Automated tests (`tests/`):
   - Sensitivity matrix recomputed with `N_MIN` applied (237 / 21 / 5; 248 / 10 / 21; 239 / 19 / 4; 250 / 8 / 17) and the 12 units that change status listed (section 7).
   - Check 6 closed (50 to 2,401 packets per row); jitter unit supported indirectly; limitations and tests updated.
   - Reconciliation tolerances extended to the new columns.
+  - Addendum (2026-10-18), no version change: `pipeline.py` and `tests/` implemented and the base case reproduced unit by unit. Ties in the worst day of D-10 documented (section 5); output metrics rounded to 4 decimals (section 9); open items closed (section 13).
 - **1.1.0** (2026-10-11): translated to English; text recovered from v1.0.1 (commit `5cecc72`) after `metrics_spec.md` was overwritten by the data dictionary in commit `c8fcc37`.
   - Analysis period set to 2022-09-12 to 2022-10-31 (D-01).
   - `N_MIN = 50` (D-02).
@@ -221,8 +222,7 @@ Automated tests (`tests/`):
 
 ## 13. Open Items
 
-- **`config.yaml`:** add `N_MIN_JITTER = 50`, replace the loss grid with the D-08 grids, and add the two D-10 columns. Update it in the same commit as this version.
-- **`step_9.py`:** the base case runs without a jitter minimum (`jit_min=0`). The result is the same (diagnostic 6), but `pipeline.py` must apply D-07 explicitly.
-- **`docs/data_dictionary.md` and `docs/data_inspection.md`:** record check 6 and the jitter unit evidence; the latter still lists every check as pending.
 - **Jitter test length:** observed `duration` (about 15 s) against the documented 10 s.
 - **Fiber time convention:** the local reading was not tested on Fiber (18 Pacific units).
+- **Power BI reconciliation:** unit-by-unit comparison per section 8, saved in `docs/reconciliation.md`.
+- Closed on 2026-10-18: `config.yaml` aligned with D-06 to D-10, `pipeline.py` applies D-07 explicitly, and the data dictionary and data inspection record check 6 and the jitter unit evidence.

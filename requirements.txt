@@ -7,3 +7,4 @@ pyyaml>=6.0.1            # lectura de archivo de configuración
 openpyxl>=3.1.2          # lectura de archivos Excel de entrada
 python-dateutil>=2.8.2   # manejo y parsing de fechas y horas
 tqdm>=4.66.0             # barras de progreso en procesamiento
+pytest>=8.0               # pruebas automáticas (tests/)

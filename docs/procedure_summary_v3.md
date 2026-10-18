@@ -1,6 +1,6 @@
 # FTTH QoE Capstone - Procedure Summary v3.2
 
-**Methodology:** v3.0 | **Spec:** v1.2.0 | **Config:** mirrors spec v1.2.0 | **Document:** v3.2 | **Last updated:** 2026-10-17 | **Author:** Eng. Rafael Cansigno P.
+**Methodology:** v3.0 | **Spec:** v1.2.0 | **Config:** mirrors spec v1.2.0 | **Document:** v3.3 | **Last updated:** 2026-10-18 | **Author:** Eng. Rafael Cansigno P.
 
 Companion documents: `docs/decisions.md` (decision log, D-01 to D-10), `docs/data_dictionary.md` (columns and time handling), `docs/data_inspection.md` (Step 0 results), `docs/metrics_spec.md` (rules), `config.yaml` (values).
 
@@ -140,12 +140,12 @@ Diagnostics that fed decisions D-06 to D-09:
 - Unit 4190285: its P95 of 50.00 ms is an interpolation between 39.26 and 53.59 ms (sorted positions 62 and 63 of 66 records), not a measurement ceiling. All 6 records above 30 ms fall on 2022-10-23.
 
 ### Step 11 - Chronic vs episodic flags (D-10)
-- For the 5 units at risk, removing the day with the most records above 20 ms leaves four above the threshold (22.86 to 35.81 ms) and takes 4190285 down to 14.77 ms.
+- For the 5 units at risk, removing the day with the most records above 20 ms leaves four above the threshold (22.73 to 35.61 ms) and takes 4190285 down to 14.77 ms.
 - On 2022-10-23 the other 69 units that use the same server (`sp1-vm-ashburn-us`) kept an RTT of 8.4-9.7 ms, while unit 4190285 rose to 53-57 ms between 18:00 and 21:00 and had started near 16:00. The event is specific to that unit, not to the server; its cause cannot be determined from these data.
 
 ## 3. Decisions
 
-All decisions are recorded with alternatives and impact in `docs/decisions.md`. D-06 to D-10 were first labeled D1 to D5 in the 2026-10-15 audit.
+All decisions are recorded with alternatives and impact in `docs/decisions.md`.
 
 | ID | Decision | Date |
 | :--- | :--- | :--- |
@@ -307,8 +307,8 @@ The figures are reproduced by `step_9.py` over the same units; `pipeline.py` mus
 | :--- | ---: | ---: | ---: | ---: | :--- |
 | 943226 | 53 | 9 | 23.13 | 22.86 | Persistent |
 | 4190285 | 66 | 1 | 50.00 | 14.77 | Episodic |
-| 24733221 | 59 | 7 | 23.96 | 23.98 | Persistent |
-| 24840041 | 131 | 16 | 35.80 | 35.81 | Persistent |
+| 24733221 | 59 | 7 | 23.96 | 22.73 | Persistent |
+| 24840041 | 131 | 16 | 35.80 | 35.61 | Persistent |
 | 25314177 | 62 | 9 | 30.48 | 23.09 | Persistent |
 
 - 943226 and 24733221 stay close to the threshold with 53 and 59 peak records; both leave the result at `N_MIN` = 100.
@@ -341,21 +341,20 @@ Dependencies: pandas and PyYAML (plus openpyxl to read the unit profile).
 | `docs/metrics_spec.md` v1.2.0 | Done |
 | `config.yaml` (spec 1.2.0) | Done |
 | `docs/data_inspection.md` | Done |
-| `docs/procedure_summary_v3.md` v3.2 | Done |
+| `docs/procedure_summary_v3.md` v3.3 | Done |
 | `step_9.py`, `step_10.py`, `step_11.py` | Done |
 | Loss sensitivity grid review | Done (D-08) |
 | Check 6 (`successes + failures` distribution) | Done |
-| `docs/data_dictionary.md` | Pending update: check 6, jitter unit evidence, D-06 to D-10 |
-| README update | Pending: figures, status, files that do not exist yet |
-| `src/pipeline.py` | Pending |
-| `tests/` | Pending |
-| Pipeline run and `data/processed/` outputs | Pending |
+| `docs/data_dictionary.md` v1.3.0 | Done |
+| README update | Done |
+| `src/pipeline.py` | Done |
+| `tests/` (21 checks) | Done, all passing |
+| Pipeline run and `data/processed/` outputs | Done: reproduces section 5 unit by unit |
 | Power BI dashboard and Python <-> Power BI reconciliation | Pending |
 | Results and findings section | Pending |
 
 **Remaining workflow**
-1. `src/pipeline.py`: one implementation of the spec, reading `config.yaml` and the `config.local.yaml` override. It applies D-07 explicitly (the base case in `step_9.py` runs without a jitter minimum; the result is the same).
-2. `tests/`: population 258 / 27, no overlap, `analyzed + insufficient == 258`, loss range, jitter null only below the minimum, D-10 column checks.
-3. Run the pipeline and compare with section 5 unit by unit.
-4. Power BI over `data/processed/` only, and reconciliation by `Unit ID` (`docs/reconciliation.md`).
-5. README, results and findings.
+1. Power BI over `data/processed/` only, and reconciliation by `Unit ID` (`docs/reconciliation.md`).
+2. Results and findings section, and the final README update.
+
+Done on 2026-10-17: `src/pipeline.py` applies D-07 explicitly (the base case in `step_9.py` runs without a jitter minimum; the result is the same), the pipeline reproduces the base case and the matrix of section 5, and `tests/` passes. One difference with `step_11.py`: with ties in the worst day, the pipeline removes the earliest date (D-10), so `p95_latency_without_worst_day_ms` is 22.73 for unit 24733221 and 35.61 for unit 24840041 (`step_11.py` printed 23.98 and 35.81); no flag or conclusion changes (`step_11_1.py`).

@@ -1,7 +1,7 @@
 # FTTH QoE Risk Analysis - Resumen Ejecutivo del Proyecto
 ### Capstone: Google Data Analytics + FCC MBA Data | 2022-09-12 a 2022-10-31 | Metodología v3.0
 
-> Contexto de negocio para lector no técnico. Fuente de verdad de cada regla y valor: `docs/metrics_spec.md` (v1.1.0) y `config.yaml`.
+> Contexto de negocio para lector no técnico. Fuente de verdad de cada regla y valor: `docs/metrics_spec.md` (v1.2.0) y `config.yaml`.
 
 ---
 
@@ -11,7 +11,7 @@ Imagina que eres un ISP de fibra óptica (FTTH). Algunas de tus casas tienen un 
 
 La pregunta: en el horario pico nocturno local (19:00-22:59), cuando muchos ven streaming, juegan y hacen videollamadas, ¿qué casas muestran calidad degradada? Y ¿cuánto de esa degradación es real, y cuánto es un artefacto del equipo de medición o del propio análisis?
 
-**Resultado clave:** pendiente. El alcance es de 258 unidades FTTH. El número de unidades analizadas y el de unidades en riesgo se publicarán solo cuando termine la corrida del pipeline y la reconciliación Python ↔ Power BI (ver el roadmap del README). Las cifras de versiones anteriores (v1, v2.x) son inválidas y no se reutilizan.
+**Resultado clave:** pendiente. El alcance es de 258 unidades FTTH. El número de unidades analizadas y el de unidades en riesgo se publicarán solo cuando termine la reconciliación Python ↔ Power BI (el pipeline y sus pruebas automáticas ya están terminados; ver el roadmap del README). Las cifras de versiones anteriores (v1, v2.x) son inválidas y no se reutilizan.
 
 ### 2. ¿Qué mide cada registro? (Explicado sin tecnicismos)
 
@@ -98,4 +98,4 @@ No se estima impacto financiero (churn, truck rolls): no hay fuente para los cos
 - Dos meses de datos de una muestra no aleatoria de unidades voluntarias; los resultados no representan a todos los suscriptores FTTH.
 - 220 de las 258 unidades (85%) están en la zona horaria Eastern de EE.UU.
 - La lectura de `dtime` como hora local se basa en evidencia indirecta y contradice la nota general de la FCC.
-- La unidad del jitter (µs) es plausible pero no está demostrada.
+- La unidad del jitter (µs) tiene respaldo indirecto (jitter por unidad frente a `rtt_std`) pero la FCC no la documenta, y el jitter está dominado por el valor de subida. Solo se evalúa en unidades con al menos 50 registros pico de jitter (decisión D-07); las demás se califican por latencia y pérdida.
