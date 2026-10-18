@@ -52,7 +52,7 @@
 # ==============================================================================
 
 project:
-  name: ftth-qoe-capstone
+  name: ftth-qos-qoe-risk-framework
   methodology_version: "3.0"
   spec_version: "1.2.0"   # docs/metrics_spec.md version this file mirrors
   description: "Identify FTTH units at risk of poor QoE during local evening peak hours, using FCC MBA telemetry (Sept-Oct 2022), and separate real degradation from measurement artifacts"

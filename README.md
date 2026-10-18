@@ -1,6 +1,6 @@
-![ftth-qoe-capstone banner](./assets/main_banner.jpg)
+![ftth-qos-qoe-risk-framework banner](./assets/main_banner.jpg)
 
-# ftth-qoe-capstone
+# ftth-qos-qoe-risk-framework
 ### FCC QoE Risk Analysis / Análisis de Riesgo QoE
 
 **Author:** Eng. Rafael Cansigno P. | Data Analyst | Telecom + BI · Google Data Analytics Capstone (Track B, self-directed) · September–October 2026
@@ -109,7 +109,7 @@ Full definitions are in [`docs/metrics_spec.md`](docs/metrics_spec.md) v1.2.0 an
 Items marked *(planned)* do not exist yet.
 
 ```
-ftth-qoe-capstone/
+ftth-qos-qoe-risk-framework/
 ├── assets/                  # banner main_banner.jpg
 ├── archive/                 # methodology v1 (failed) and v2 material, kept as a record
 ├── evidence/                # screenshots: raw archive contents, FTTH filter
