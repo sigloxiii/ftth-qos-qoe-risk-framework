@@ -5,8 +5,8 @@ Living document. It records what was built in Power BI, the reason behind each s
 - **Tool:** Power BI Desktop 2.157.1354.0 (64-bit)
 - **Project file:** `powerbi/ftth_qoe.pbix`
 - **Last updated:** 2026-10-18
-- **Status:** Sessions 1-2 complete (load and model). Sessions 3-9 pending.
-- **Images:** `docs/img/powerbi/` (`01_unit_metrics_load.png`, `02_unit_metrics_null_jitter.png`, `03_model_view_flat.png`, `04_hierarchy_matrix.png`; numbered in order of appearance, matching Figures 1-4)
+- **Status:** Sessions 1-3 complete (load, model, base measures). Sessions 4-9 pending.
+- **Images:** `docs/img/powerbi/` (`01_unit_metrics_load.png`, `02_unit_metrics_null_jitter.png`, `03_model_view_flat.png`, `04_hierarchy_matrix.png`, `05_measures_check.png`; numbered in order of appearance, matching Figures 1-5)
 
 ## 1. Role of Power BI in this project
 
@@ -89,19 +89,84 @@ Queries loaded: `unit_metrics`, `units_insufficient`, `variants_matrix`, `sensit
 
 Analyzed + insufficient = population for every ISP, and the grand total matches the 237 units of `unit_metrics`. Ohio holds 95 of the 237 analyzed units (40 %), a geographic concentration to mention in the findings.
 
-## 5. Modelling notes
+## 5. Session 3 - Base measures (Model the data)
+
+All KPIs are DAX **measures** stored in an empty container table, `_Measures` (created with *Enter data*, placeholder column hidden). The table has no relationships, so the model stays flat.
+
+**Why measures and not calculated columns.** A calculated column is evaluated once per row at load time and stored; a measure is evaluated when a visual is drawn, in the current filter context, so it reacts to slicers, rows and drill-down. The per-unit metrics are already computed by `src/pipeline.py`; Power BI only aggregates them.
+
+| # | Step | Why |
+| :-: | :--- | :--- |
+| 1 | Create `_Measures` (Home > Enter data > Create/Load) | One home for every KPI; keeps the field list organized. |
+| 2 | Create the 11 measures below (Home > New measure) | Counts, rates and data-quality indicators used in all report pages. |
+| 3 | Format: integers with thousands separator; `% Analyzed` and `% At Risk` as percentage with 1 decimal | `% At Risk` showed `0` until it was formatted as a percentage (5 / 237 = 0.0211). A format issue, not a calculation error. |
+| 4 | Display folders (Model view > Properties > Display folder): `1 Population`, `2 Risk`, `3 Data Quality` | Readable field list. |
+| 5 | `COALESCE(..., 0)` on count measures that can be empty | `COUNTROWS` returns BLANK when no row passes the filter. A KPI card should say 0, not blank. |
+
+```dax
+-- 1 Population
+Analyzed Units = COUNTROWS ( unit_metrics )
+
+Insufficient Units =
+CALCULATE (
+    COUNTROWS ( units_insufficient ),
+    -- no relationships: pass the ISP and state filters to the other table by hand
+    TREATAS ( VALUES ( unit_metrics[isp] ),   units_insufficient[isp] ),
+    TREATAS ( VALUES ( unit_metrics[state] ), units_insufficient[state] )
+)
+
+Population Units = [Analyzed Units] + [Insufficient Units]
+% Analyzed       = DIVIDE ( [Analyzed Units], [Population Units] )
+
+-- 2 Risk
+At Risk Units = COALESCE ( CALCULATE ( COUNTROWS ( unit_metrics ), unit_metrics[risk_flag] = 1 ), 0 )
+Severe Units  = COALESCE ( CALCULATE ( COUNTROWS ( unit_metrics ), unit_metrics[risk_severe] = 1 ), 0 )
+% At Risk     = DIVIDE ( [At Risk Units], [Analyzed Units] )
+Latency Flags = COALESCE ( CALCULATE ( COUNTROWS ( unit_metrics ), unit_metrics[flag_latency] = 1 ), 0 )
+Jitter Flags  = COALESCE ( CALCULATE ( COUNTROWS ( unit_metrics ), unit_metrics[flag_jitter] = 1 ), 0 )
+Loss Flags    = COALESCE ( CALCULATE ( COUNTROWS ( unit_metrics ), unit_metrics[flag_loss] = 1 ), 0 )
+
+-- 3 Data quality
+Units Null Jitter = COUNTROWS ( unit_metrics ) - COUNT ( unit_metrics[p95_jitter_ms] )
+```
+
+- `COUNTROWS` counts rows (units); `COUNT` counts non-blank values, so `Units Null Jitter` = 237 - 144 = 93 without altering the nulls (D-07).
+- `DIVIDE` returns blank instead of an error when the denominator is 0.
+- The denominator of `% At Risk` is the analyzed units (5 / 237 = 2.1 %), as in the base case of the pipeline.
+
+**Verification against the pipeline reference (no filters)**
+
+| Measure | Expected | Observed |
+| :--- | :-: | :-: |
+| Analyzed / Insufficient / Population | 237 / 21 / 258 | 237 / 21 / 258 |
+| % Analyzed | 91.9 % | 91.9 % |
+| At Risk / Severe | 5 / 1 | 5 / 1 |
+| % At Risk | 2.1 % | 2.1 % |
+| Latency / Jitter / Loss Flags | 5 / 0 / 1 | 5 / 0 / 1 |
+| Units Null Jitter | 93 | 93 |
+
+`Insufficient Units` is the delicate measure, because it relies on `TREATAS`. It was checked at ISP and state level: the states with insufficient units are KY 1, OH 11, TX 1, MA 2, NJ 2, PA 1 and VA 3 (total 21), and analyzed + insufficient = population in every ISP and state (Cincinnati Bell 108 + 12 = 120, Frontier 61 + 1 = 62, Verizon 68 + 8 = 76).
+
+![Measures check: totals table and Matrix by ISP and state](img/powerbi/05_measures_check.png)
+
+*Figure 5. Measure totals (table) and `Analyzed`, `Insufficient` and `Population` units by ISP and state (matrix).*
+
+Selecting a row in the Matrix cross-filters the other visuals (for example, selecting FL shows 20 analyzed units, 0 at risk, 1 unit with null jitter). Clear the selection before reading grand totals.
+
+## 6. Modelling notes
 
 - **Flat by design.** `unit_metrics` is the single fact table (237 analyzed units). ISP, state and Whitebox model are text columns in the same table.
 - **Population denominator.** The 258-unit population is computed with a measure (analyzed + `units_insufficient`), not through a relationship.
 - **Scenario tables are disconnected.** `variants_matrix` and `sensitivity_grid` hold pre-computed scenario results and are not filtered by slicers.
 - **Null jitter (D-07).** 93 analyzed units have no jitter result. Aggregations ignore blanks; they are never replaced with 0.
+- **Slicer limitation.** `units_insufficient` is reached only through `TREATAS` on `isp` and `state`. A slicer on any other `unit_metrics` column (Whitebox model, census, speed tiers) filters analyzed units but not insufficient ones, so `Insufficient Units` and `Population Units` ignore it. Population by ISP and state is exact; other cuts need a dimension table.
 - **Trade-off.** A star schema would enable cross-filtering and reuse; out of scope here.
 
-## 6. Roadmap (pending)
+## 7. Roadmap
 
 | Session | Content | PL-300 domain |
 | :-: | :--- | :--- |
-| 3 | Base DAX measures (analyzed, insufficient, at risk, % at risk) | Model the data |
+| 3 | Base DAX measures (analyzed, insufficient, at risk, % at risk) - **done** | Model the data |
 | 4 | Audit phase 1: peak window, primary server, P95 latency, loss | Prepare the data |
 | 5 | Audit phase 2: jitter with minimum 50 records | Prepare the data |
 | 6 | Audit phase 3: D-10 columns | Prepare the data |
