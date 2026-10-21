@@ -4,9 +4,9 @@ Living document. It records what was built in Power BI, the reason behind each s
 
 - **Tool:** Power BI Desktop 2.157.1354.0 (64-bit)
 - **Project file:** `powerbi/ftth_qoe.pbix`
-- **Last updated:** 2026-10-18
-- **Status:** Sessions 1-3 complete (load, model, base measures). Sessions 4-9 pending.
-- **Images:** `docs/img/powerbi/` (`01_unit_metrics_load.png`, `02_unit_metrics_null_jitter.png`, `03_model_view_flat.png`, `04_hierarchy_matrix.png`, `05_measures_check.png`; numbered in order of appearance, matching Figures 1-5)
+- **Last updated:** 2026-10-21
+- **Status:** Sessions 1-3 complete (load, model, base measures). Sessions 4A-4B complete (latency cleaning audit; peak window, primary server, P95 latency, loss, flags). Sessions 5-9 pending.
+- **Images:** `docs/img/powerbi/` (`01_unit_metrics_load.png`, `02_unit_metrics_null_jitter.png`, `03_model_view_flat.png`, `04_hierarchy_matrix.png`, `05_measures_check.png`, `06_audit_data_quality_check.png`, `07_audit_core_totals.png`, `08_audit_core_control_units.png`; numbered in order of appearance, matching Figures 1-8)
 
 ## 1. Role of Power BI in this project
 
@@ -153,7 +153,177 @@ Units Null Jitter = COUNTROWS ( unit_metrics ) - COUNT ( unit_metrics[p95_jitter
 
 Selecting a row in the Matrix cross-filters the other visuals (for example, selecting FL shows 20 analyzed units, 0 at risk, 1 unit with null jitter). Clear the selection before reading grand totals.
 
-## 6. Modelling notes
+## 6. Session 4A - Audit of latency cleaning (Prepare the data)
+
+**Goal.** Rebuild the latency cleaning of the pipeline (period, validity, duplicates D-05) in Power Query, independently of `src/pipeline.py`, and reconcile the row counts with the pipeline data-quality log.
+
+**Source and its limits.** The audit reads `data/interim/udplatency_ftth.csv`, the output of `step_1.py`. That folder is gitignored, so the audit is reproducible only locally or after re-running `step_1.py`. Because the input is the pipeline's own interim file, this audit does not cover step 1 itself (the 258-unit filter is covered by the test suite). Minor discrepancies against the pipeline are expected and are reported per `Unit ID`, never hidden in totals.
+
+**Query design.** Each stage is its own query referencing the previous one, so the row count of every stage can be read and audited. All staging queries have *Enable load* off; only `aud_dq` is loaded.
+
+| Query | Logic | Loaded |
+| :--- | :--- | :-: |
+| `aud_lat_raw` | CSV read (UTF-8), headers promoted, explicit types with culture `en-US` | No |
+| `aud_lat_period` | `dtime` in [2022-09-12, 2022-11-01) (D-01) | No |
+| `aud_lat_valid` | `rtt_avg` not null and >= 0, `successes + failures` > 0 | No |
+| `aud_lat_distinct` | `Table.Distinct` on all columns (exact duplicates, D-05) | No |
+| `aud_lat_conflicts` | groups of (`unit_id`, `dtime`, `target`) with more than 1 row after exact dedup | No |
+| `aud_lat_clean` | `aud_lat_distinct` minus conflicting keys (Left Anti join) | No |
+| `aud_dq` | `Table.RowCount` of each stage | Yes |
+
+**Why this order and these tools.**
+- Exact duplicates are removed first on all columns. Conflicting duplicates (same key, different values) are then dropped entirely with an anti-join (D-05).
+- Remove Duplicates on the three key columns alone would be wrong: it would keep one row of each conflicting group instead of dropping all of them.
+- Exact counts come from `Table.RowCount`; the preview shows "999+" for large tables and column profiling defaults to the top 1000 rows (switch it to the entire data set when profiling).
+
+**Verification.**
+
+| Stage | Pipeline log | `aud_dq` |
+| :--- | :-: | :-: |
+| rows_read | 172,800 | 172,800 |
+| rows_in_analysis_period | 172,800 | 172,800 |
+| rows_valid | 172,800 | 172,800 |
+| rows_after_exact_dedup | 172,791 | 172,791 |
+| duplicate_conflicting_groups | 0 | 0 |
+| rows_after_cleaning | 172,791 | 172,791 |
+
+![Audit data-quality check: query list and aud_dq](img/powerbi/06_audit_data_quality_check.png)
+
+*Figure 6. `aud_dq` row counts per stage (staging queries in italics are not loaded).*
+
+**Result.** Power Query reproduces the pipeline cleaning for latency: 9 exact extra rows and 0 conflicting groups. Jitter (4 exact extras, 1 conflicting group, unit 943232) is audited in session 5.
+
+## 7. Session 4B - Audit of peak window, primary server, P95 latency and loss (Prepare the data)
+
+**Goal.** Rebuild the per-unit core metrics of the pipeline (peak window D-03, primary server D-04/D-06, minimum records D-02, P95 latency, loss, flags) in Power Query, starting from `aud_lat_clean`, and check totals and two control units. The per-unit reconciliation against `ftth_qoe_unit_metrics.csv` is done in session 7, once jitter and D-10 columns also exist.
+
+### 7.1 Audit parameters
+
+Created inside the Power Query Editor (*Home > Manage Parameters > New Parameter*), as for `RepoPath`. The parameter dialog has no *Whole Number* type, so `N_MIN` is a *Decimal Number*; comparing an integer column with it works the same in M. *Required* stays checked.
+
+| Parameter | Type | Value | Description |
+| :--- | :--- | :-: | :--- |
+| `N_MIN` | Decimal Number | 50 | Minimum peak-window latency records required for a unit to be analyzed (D-02). Below it, the unit is "insufficient". Mirrors `n_min_peak_records` in `config.yaml`. |
+| `THR_LATENCY_MS` | Decimal Number | 20 | P95 latency threshold in ms during the peak window. A unit is flagged when P95 is strictly greater. Mirrors the latency threshold in `config.yaml`. |
+| `THR_LOSS_PCT` | Decimal Number | 1 | Packet loss threshold in percent on the primary server's peak records. A unit is flagged when loss is strictly greater. Mirrors the loss threshold in `config.yaml`. |
+
+*Why parameters.* Thresholds live in one place and can change without editing queries, as in the pipeline. They duplicate `config.yaml`, so a change there must be repeated here.
+
+### 7.2 Queries
+
+Each query is created with *Home > New Source > Blank Query*, renamed in *Query Settings*, and its code pasted in the *Advanced Editor*. The order matters because each query references the previous one.
+
+| Query | Purpose | Loaded |
+| :--- | :--- | :-: |
+| `aud_lat_peak` | Peak window 19:00-22:59 (D-03) | No |
+| `aud_primary` | Primary server per unit (D-04, D-06) | No |
+| `aud_lat_metrics` | Records, P95 latency and loss on the primary server | No |
+| `aud_core` | Status (analyzed / insufficient) and flags per unit | Yes |
+
+**`aud_lat_peak`**
+```m
+let
+    Source = aud_lat_clean,
+    // dtime is already local time (D-03); window 19:00-22:59 => hour >= 19 and < 23
+    Result = Table.SelectRows(Source, each Time.Hour([dtime]) >= 19 and Time.Hour([dtime]) < 23)
+in
+    Result
+```
+
+**`aud_primary`**
+```m
+let
+    // peak records per unit and server
+    Counts = Table.Group(aud_lat_peak, {"unit_id", "target"},
+        {{"n", each Table.RowCount(_), Int64.Type}}),
+    // per unit: most records first; tie => alphabetical target
+    Result = Table.Group(Counts, {"unit_id"}, {{"primary_target",
+        each Table.Sort(_, {{"n", Order.Descending}, {"target", Order.Ascending}}){0}[target],
+        type text}})
+in
+    Result
+```
+The primary server is chosen once per unit using peak latency records (D-06). Sorting and taking the first row keeps the alphabetical tie-break; `Table.Distinct` would not guarantee it.
+
+**`aud_lat_metrics`**
+```m
+let
+    // keep only the records of each unit's primary server
+    Joined = Table.NestedJoin(aud_lat_peak, {"unit_id", "target"},
+        aud_primary, {"unit_id", "primary_target"}, "p", JoinKind.Inner),
+    OnPrimary = Table.RemoveColumns(Joined, {"p"}),
+    WithMs = Table.AddColumn(OnPrimary, "lat_ms", each [rtt_avg] / 1000, type number),  // us -> ms
+    Result = Table.Group(WithMs, {"unit_id"}, {
+        {"n_peak_records", each Table.RowCount(_), Int64.Type},
+        // ExcelInc = PERCENTILE.INC = pandas linear interpolation; set explicitly
+        {"p95_latency_ms", each List.Percentile([lat_ms], 0.95,
+            [PercentileMode = PercentileMode.ExcelInc]), type number},
+        // ratio of sums, not an average of per-row percentages
+        {"loss_pct", each List.Sum([failures]) / (List.Sum([successes]) + List.Sum([failures])) * 100, type number}
+    })
+in
+    Result
+```
+`PercentileMode.ExcelInc` is set on purpose: M's default percentile mode is not the interpolation used by pandas.
+
+**`aud_core`**
+```m
+let
+    Joined = Table.NestedJoin(aud_lat_metrics, {"unit_id"}, aud_primary, {"unit_id"}, "p", JoinKind.Inner),
+    WithTarget = Table.ExpandTableColumn(Joined, "p", {"primary_target"}),
+    WithStatus = Table.AddColumn(WithTarget, "status",
+        each if [n_peak_records] >= N_MIN then "analyzed" else "insufficient", type text),
+    // strictly greater than the threshold (spec)
+    FlagLat = Table.AddColumn(WithStatus, "flag_latency",
+        each if [p95_latency_ms] > THR_LATENCY_MS then 1 else 0, Int64.Type),
+    Result = Table.AddColumn(FlagLat, "flag_loss",
+        each if [loss_pct] > THR_LOSS_PCT then 1 else 0, Int64.Type)
+in
+    Result
+```
+
+### 7.3 Load and model hygiene
+
+- *Enable load* is off for `aud_lat_peak`, `aud_primary` and `aud_lat_metrics`; only `aud_core` (258 rows) and `aud_dq` are loaded.
+- In the Data view, `unit_id`, `n_peak_records`, `p95_latency_ms`, `loss_pct`, `flag_latency` and `flag_loss` of `aud_core` are set to *Summarization: Don't summarize*, so a P95 is never summed by accident.
+
+### 7.4 Verification
+
+Totals and control units were checked with the *DAX query view* (queries are saved in the `.pbix` and are not published). No measures were added to the model.
+
+```dax
+EVALUATE
+ROW (
+    "rows",          COUNTROWS ( aud_core ),
+    "analyzed",      CALCULATE ( COUNTROWS ( aud_core ), aud_core[status] = "analyzed" ),
+    "insufficient",  CALCULATE ( COUNTROWS ( aud_core ), aud_core[status] = "insufficient" ),
+    "flag_latency",  CALCULATE ( SUM ( aud_core[flag_latency] ), aud_core[status] = "analyzed" ),
+    "flag_loss",     CALCULATE ( SUM ( aud_core[flag_loss] ), aud_core[status] = "analyzed" )
+)
+```
+
+| Control | Pipeline reference | `aud_core` |
+| :--- | :-: | :-: |
+| Units | 258 | 258 |
+| Analyzed / insufficient | 237 / 21 | 237 / 21 |
+| Latency flags (analyzed) | 5 | 5 |
+| Loss flags (analyzed) | 1 | 1 |
+| Unit 925942 | `sp1-vm-chicago-us.samknows.com`, 93 records, P95 14.93, loss 0.04 | same |
+| Unit 943226 | `sp2-vm-chicago-us.samknows.com`, 53 records, P95 23.13, loss 0.00, latency flag | same |
+
+![aud_core totals in DAX query view](img/powerbi/07_audit_core_totals.png)
+
+*Figure 7. Totals of `aud_core`: 258 units, 237 analyzed, 21 insufficient, 5 latency flags, 1 loss flag.*
+
+![aud_core control units in DAX query view](img/powerbi/08_audit_core_control_units.png)
+
+*Figure 8. Control units 925942 and 943226.*
+
+The threshold edge also behaves as specified: a unit with 49 peak records is `insufficient`, a unit with exactly 50 is `analyzed` (`>= N_MIN`).
+
+**Result.** Power Query reproduces the pipeline totals and both control units. Per-unit differences, if any, are reported in session 7.
+
+## 8. Modelling notes
 
 - **Flat by design.** `unit_metrics` is the single fact table (237 analyzed units). ISP, state and Whitebox model are text columns in the same table.
 - **Population denominator.** The 258-unit population is computed with a measure (analyzed + `units_insufficient`), not through a relationship.
@@ -162,12 +332,13 @@ Selecting a row in the Matrix cross-filters the other visuals (for example, sele
 - **Slicer limitation.** `units_insufficient` is reached only through `TREATAS` on `isp` and `state`. A slicer on any other `unit_metrics` column (Whitebox model, census, speed tiers) filters analyzed units but not insufficient ones, so `Insufficient Units` and `Population Units` ignore it. Population by ISP and state is exact; other cuts need a dimension table.
 - **Trade-off.** A star schema would enable cross-filtering and reuse; out of scope here.
 
-## 7. Roadmap
+## 9. Roadmap
 
 | Session | Content | PL-300 domain |
 | :-: | :--- | :--- |
 | 3 | Base DAX measures (analyzed, insufficient, at risk, % at risk) - **done** | Model the data |
-| 4 | Audit phase 1: peak window, primary server, P95 latency, loss | Prepare the data |
+| 4A | Audit phase 1a: latency cleaning, row counts - **done** | Prepare the data |
+| 4B | Audit phase 1b: peak window, primary server, P95 latency, loss, flags - **done** | Prepare the data |
 | 5 | Audit phase 2: jitter with minimum 50 records | Prepare the data |
 | 6 | Audit phase 3: D-10 columns | Prepare the data |
 | 7 | Per-`Unit ID` reconciliation -> `docs/reconciliation.md` | Analyze the data |
