@@ -5,8 +5,8 @@ Living document. It records what was built in Power BI, the reason behind each s
 - **Tool:** Power BI Desktop 2.157.1354.0 (64-bit)
 - **Project file:** `powerbi/ftth_qoe.pbix`
 - **Last updated:** 2026-10-21
-- **Status:** Sessions 1-3 complete (load, model, base measures). Sessions 4A-4B complete (latency cleaning audit; peak window, primary server, P95 latency, loss, flags). Sessions 5-9 pending.
-- **Images:** `docs/img/powerbi/` (`01_unit_metrics_load.png`, `02_unit_metrics_null_jitter.png`, `03_model_view_flat.png`, `04_hierarchy_matrix.png`, `05_measures_check.png`, `06_audit_data_quality_check.png`, `07_audit_core_totals.png`, `08_audit_core_control_units.png`; numbered in order of appearance, matching Figures 1-8)
+- **Status:** Sessions 1-3 complete (load, model, base measures). Sessions 4A-5B complete (latency cleaning audit; peak window, primary server, P95 latency, loss; jitter cleaning, P95 jitter and minimum-records rule). Sessions 6-9 pending.
+- **Images:** `docs/img/powerbi/` (`01_unit_metrics_load.png`, `02_unit_metrics_null_jitter.png`, `03_model_view_flat.png`, `04_hierarchy_matrix.png`, `05_measures_check.png`, `06_audit_data_quality_check.png`, `07_audit_core_totals.png`, `08_audit_core_control_units.png`, `09_audit_jitter_dq_check.png`, `10_audit_jitter_conflicts.png`, `11_audit_units_totals.png`, `12_audit_units_jitter_controls.png`; numbered in order of appearance, matching Figures 1-12)
 
 ## 1. Role of Power BI in this project
 
@@ -218,7 +218,7 @@ Each query is created with *Home > New Source > Blank Query*, renamed in *Query 
 | `aud_lat_peak` | Peak window 19:00-22:59 (D-03) | No |
 | `aud_primary` | Primary server per unit (D-04, D-06) | No |
 | `aud_lat_metrics` | Records, P95 latency and loss on the primary server | No |
-| `aud_core` | Status (analyzed / insufficient) and flags per unit | Yes |
+| `aud_core` | Status (analyzed / insufficient) and flags per unit | Yes (until session 5B, see 8.2) |
 
 **`aud_lat_peak`**
 ```m
@@ -323,7 +323,207 @@ The threshold edge also behaves as specified: a unit with 49 peak records is `in
 
 **Result.** Power Query reproduces the pipeline totals and both control units. Per-unit differences, if any, are reported in session 7.
 
-## 8. Modelling notes
+## 8. Session 5 - Audit of jitter (Prepare the data)
+
+### 8.1 Session 5A - Jitter cleaning
+
+**Goal.** Rebuild the jitter cleaning of the pipeline (period, validity, duplicates D-05) from `data/interim/udpjitter_ftth.csv`, with the same staging design as 4A, and reconcile the row counts with the pipeline data-quality log. The same limits apply: the file is the output of `step_1.py`, the folder is gitignored, and step 1 itself is not audited.
+
+**Differences from latency.**
+- Validity rule: `jitter_up` and `jitter_down` must both be non-null and >= 0 (the latency rules on `rtt_avg`, successes and failures do not apply).
+- Unlike latency, jitter has one conflicting duplicate group (same key, different values), so `aud_jit_conflicts` is not empty.
+
+| Query | Logic | Loaded |
+| :--- | :--- | :-: |
+| `aud_jit_raw` | CSV read (UTF-8), headers promoted, explicit types with culture `en-US` | No |
+| `aud_jit_period` | `dtime` in [2022-09-12, 2022-11-01) (D-01) | No |
+| `aud_jit_valid` | jitter up and down not null and >= 0 | No |
+| `aud_jit_distinct` | `Table.Distinct` on all columns (exact duplicates, D-05) | No |
+| `aud_jit_conflicts` | keys (`unit_id`, `dtime`, `target`) with more than 1 row after exact dedup | No |
+| `aud_jit_clean` | `aud_jit_distinct` minus conflicting keys (Left Anti join) | No |
+| `aud_dq_jit` | `Table.RowCount` of each stage | Yes |
+
+`aud_dq_jit` is a separate query instead of an extension of `aud_dq`, so the verified latency audit is not modified.
+
+**`aud_jit_raw`**
+```m
+let
+    Source = Csv.Document(File.Contents(RepoPath & "data\interim\udpjitter_ftth.csv"),
+        [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+    Result = Table.TransformColumnTypes(Promoted, {
+        {"unit_id", Int64.Type}, {"dtime", type datetime}, {"target", type text},
+        {"jitter_up", type number}, {"jitter_down", type number}}, "en-US")
+in
+    Result
+```
+
+**`aud_jit_period`**
+```m
+let
+    Source = aud_jit_raw,
+    Result = Table.SelectRows(Source, each [dtime] >= #datetime(2022,9,12,0,0,0) and [dtime] < #datetime(2022,11,1,0,0,0))
+in
+    Result
+```
+
+**`aud_jit_valid`**
+```m
+let
+    Source = aud_jit_period,
+    // invalid: null or negative jitter in either direction
+    Result = Table.SelectRows(Source, each [jitter_up] <> null and [jitter_down] <> null and [jitter_up] >= 0 and [jitter_down] >= 0)
+in
+    Result
+```
+
+**`aud_jit_distinct`**
+```m
+let
+    Source = aud_jit_valid,
+    // exact duplicates only: all columns must match (D-05)
+    Result = Table.Distinct(Source)
+in
+    Result
+```
+
+**`aud_jit_conflicts`**
+```m
+let
+    Source = aud_jit_distinct,
+    Grouped = Table.Group(Source, {"unit_id", "dtime", "target"}, {{"n", each Table.RowCount(_), Int64.Type}}),
+    Result = Table.SelectRows(Grouped, each [n] > 1)
+in
+    Result
+```
+
+**`aud_jit_clean`**
+```m
+let
+    Keys = {"unit_id", "dtime", "target"},
+    Joined = Table.NestedJoin(aud_jit_distinct, Keys, aud_jit_conflicts, Keys, "conf", JoinKind.LeftAnti),
+    Result = Table.RemoveColumns(Joined, {"conf"})
+in
+    Result
+```
+
+**`aud_dq_jit`**
+```m
+let
+    Rows = {
+        {"rows_read", Table.RowCount(aud_jit_raw)},
+        {"rows_in_analysis_period", Table.RowCount(aud_jit_period)},
+        {"rows_valid", Table.RowCount(aud_jit_valid)},
+        {"rows_after_exact_dedup", Table.RowCount(aud_jit_distinct)},
+        {"duplicate_conflicting_groups", Table.RowCount(aud_jit_conflicts)},
+        {"rows_after_cleaning", Table.RowCount(aud_jit_clean)}
+    },
+    Result = Table.FromRows(Rows, type table [stage = text, rows = Int64.Type])
+in
+    Result
+```
+
+**Verification.**
+
+| Stage | Pipeline log | `aud_dq_jit` |
+| :--- | :-: | :-: |
+| rows_read / in period / valid | 152,730 | 152,730 |
+| rows_after_exact_dedup | 152,726 | 152,726 |
+| duplicate_conflicting_groups | 1 | 1 |
+| rows_after_cleaning | 152,724 | 152,724 |
+
+![Audit jitter data-quality check: aud_dq_jit](img/powerbi/09_audit_jitter_dq_check.png)
+
+*Figure 9. `aud_dq_jit` row counts per stage (staging queries in italics are not loaded).*
+
+![Audit jitter conflicts: aud_jit_conflicts](img/powerbi/10_audit_jitter_conflicts.png)
+
+*Figure 10. The only conflicting group: unit 943232, server `sp1-vm-atlanta-us.samknows.com`, 2022-10-19 21:12:17, 2 rows.*
+
+**Result.** Power Query reproduces the pipeline cleaning for jitter: 4 exact extra rows, 1 conflicting group and 2 rows dropped (152,726 - 2 = 152,724). The conflicting pair falls inside the peak window (hour 21), so Power BI and the pipeline drop it at the same point.
+
+### 8.2 Session 5B - P95 jitter and minimum-records rule (D-06, D-07)
+
+**Goal.** Compute the per-unit jitter metrics on the primary server of the latency file and apply the minimum of peak jitter records.
+
+**Parameters** (created as in 7.1, type Decimal Number):
+
+| Parameter | Value | Description |
+| :--- | :-: | :--- |
+| `N_JIT_MIN` | 50 | Minimum peak-window jitter records on the primary server required to report P95 jitter (D-07). Below it, jitter is null, never 0. Mirrors `metrics.jitter.min_peak_records` in `config.yaml`. |
+| `THR_JITTER_MS` | 5 | P95 jitter threshold in ms during the peak window. A unit is flagged when P95 is strictly greater. Mirrors the jitter threshold in `config.yaml`. |
+
+`N_JIT_MIN` is separate from `N_MIN` because the configuration keeps them as independent rules, although both are 50 today.
+
+**`aud_jit_metrics`**
+```m
+let
+    // jitter peak window (D-03), same hours as latency
+    Peak = Table.SelectRows(aud_jit_clean, each Time.Hour([dtime]) >= 19 and Time.Hour([dtime]) < 23),
+    // D-06: only the primary server chosen from the LATENCY file
+    Joined = Table.NestedJoin(Peak, {"unit_id", "target"}, aud_primary, {"unit_id", "primary_target"}, "p", JoinKind.Inner),
+    OnPrimary = Table.RemoveColumns(Joined, {"p"}),
+    // jitter_up / jitter_down in us -> average -> ms
+    WithMs = Table.AddColumn(OnPrimary, "jit_ms", each ([jitter_up] + [jitter_down]) / 2 / 1000, type number),
+    Result = Table.Group(WithMs, {"unit_id"}, {
+        {"n_peak_jitter_records", each Table.RowCount(_), Int64.Type},
+        {"p95_jitter_raw", each List.Percentile([jit_ms], 0.95, [PercentileMode = PercentileMode.ExcelInc]), type number}
+    })
+in
+    Result
+```
+The primary server comes from the latency file (D-06); the jitter file does not get its own. `p95_jitter_raw` does not apply the minimum yet; that rule is a visible step in `aud_units`.
+
+**`aud_units`**
+```m
+let
+    // left join: units without jitter records on the primary server must stay
+    Joined = Table.NestedJoin(aud_core, {"unit_id"}, aud_jit_metrics, {"unit_id"}, "j", JoinKind.LeftOuter),
+    Expanded = Table.ExpandTableColumn(Joined, "j", {"n_peak_jitter_records", "p95_jitter_raw"}),
+    // a count with no records is a real 0
+    Counts = Table.ReplaceValue(Expanded, null, 0, Replacer.ReplaceValue, {"n_peak_jitter_records"}),
+    // D-07: P95 only with enough records, otherwise null (never 0)
+    P95 = Table.AddColumn(Counts, "p95_jitter_ms",
+        each if [n_peak_jitter_records] >= N_JIT_MIN then [p95_jitter_raw] else null, type nullable number),
+    // null never raises a flag; the guard is needed because null > 5 returns null in M
+    Flag = Table.AddColumn(P95, "flag_jitter",
+        each if [p95_jitter_ms] <> null and [p95_jitter_ms] > THR_JITTER_MS then 1 else 0, Int64.Type),
+    Result = Table.RemoveColumns(Flag, {"p95_jitter_raw"})
+in
+    Result
+```
+
+**Load.** `aud_jit_metrics` and `aud_core` have *Enable load* off (`aud_units` contains `aud_core`). `aud_units` is loaded (258 rows) and its numeric columns are set to *Don't summarize*. Figures 7 and 8 were taken when `aud_core` was loaded; from now on the audit table is `aud_units`.
+
+**Verification (DAX query view).**
+```dax
+EVALUATE
+ROW (
+    "rows",        COUNTROWS ( aud_units ),
+    "null_jitter", CALCULATE ( COUNTROWS ( aud_units ), aud_units[status] = "analyzed", aud_units[p95_jitter_ms] = BLANK () ),
+    "flag_jitter", CALCULATE ( SUM ( aud_units[flag_jitter] ), aud_units[status] = "analyzed" )
+)
+```
+
+| Control | Pipeline reference | `aud_units` |
+| :--- | :-: | :-: |
+| Units | 258 | 258 |
+| Analyzed units with null jitter | 93 | 93 |
+| Jitter flags (analyzed) | 0 | 0 |
+| Unit 925942 | 36 peak jitter records, null P95 | 36, null |
+| Unit 925886 | 68 records, P95 0.3562 | 68, 0.36 |
+
+![aud_units totals in DAX query view](img/powerbi/11_audit_units_totals.png)
+
+*Figure 11. Totals of `aud_units`: 258 units, 93 analyzed units with null jitter, 0 jitter flags.*
+
+![aud_units jitter control units in DAX query view](img/powerbi/12_audit_units_jitter_controls.png)
+
+*Figure 12. Control units 925942 (below the minimum, null jitter) and 925886 (P95 0.36 ms).*
+
+**Result.** Power Query reproduces the jitter rule of the pipeline: null below 50 peak jitter records, never 0, and no jitter flag in the base case (D-07, D-09). Per-unit differences, if any, are reported in session 7.
+
+## 9. Modelling notes
 
 - **Flat by design.** `unit_metrics` is the single fact table (237 analyzed units). ISP, state and Whitebox model are text columns in the same table.
 - **Population denominator.** The 258-unit population is computed with a measure (analyzed + `units_insufficient`), not through a relationship.
@@ -332,15 +532,15 @@ The threshold edge also behaves as specified: a unit with 49 peak records is `in
 - **Slicer limitation.** `units_insufficient` is reached only through `TREATAS` on `isp` and `state`. A slicer on any other `unit_metrics` column (Whitebox model, census, speed tiers) filters analyzed units but not insufficient ones, so `Insufficient Units` and `Population Units` ignore it. Population by ISP and state is exact; other cuts need a dimension table.
 - **Trade-off.** A star schema would enable cross-filtering and reuse; out of scope here.
 
-## 9. Roadmap
+## 10. Roadmap
 
 | Session | Content | PL-300 domain |
 | :-: | :--- | :--- |
 | 3 | Base DAX measures (analyzed, insufficient, at risk, % at risk) - **done** | Model the data |
 | 4A | Audit phase 1a: latency cleaning, row counts - **done** | Prepare the data |
 | 4B | Audit phase 1b: peak window, primary server, P95 latency, loss, flags - **done** | Prepare the data |
-| 5 | Audit phase 2: jitter with minimum 50 records | Prepare the data |
-| 6 | Audit phase 3: D-10 columns | Prepare the data |
+| 5 | Audit phase 2: jitter cleaning (5A), P95 jitter with minimum 50 records (5B) - **done** | Prepare the data |
+| 6 | Audit phase 3: `risk_flag`, `risk_severe` and D-10 columns | Prepare the data |
 | 7 | Per-`Unit ID` reconciliation -> `docs/reconciliation.md` | Analyze the data |
 | 8 | Report pages and narrative | Visualize and analyze |
 | 9 | Performance, documentation, publishing | Manage and secure |
