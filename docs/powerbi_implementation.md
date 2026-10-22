@@ -5,8 +5,8 @@ Living document. It records what was built in Power BI, the reason behind each s
 - **Tool:** Power BI Desktop 2.157.1354.0 (64-bit)
 - **Project file:** `powerbi/ftth_qoe.pbix`
 - **Last updated:** 2026-10-21
-- **Status:** Sessions 1-3 complete (load, model, base measures). Sessions 4A-5B complete (latency cleaning audit; peak window, primary server, P95 latency, loss; jitter cleaning, P95 jitter and minimum-records rule). Sessions 6-9 pending.
-- **Images:** `docs/img/powerbi/` (`01_unit_metrics_load.png`, `02_unit_metrics_null_jitter.png`, `03_model_view_flat.png`, `04_hierarchy_matrix.png`, `05_measures_check.png`, `06_audit_data_quality_check.png`, `07_audit_core_totals.png`, `08_audit_core_control_units.png`, `09_audit_jitter_dq_check.png`, `10_audit_jitter_conflicts.png`, `11_audit_units_totals.png`, `12_audit_units_jitter_controls.png`; numbered in order of appearance, matching Figures 1-12)
+- **Status:** Sessions 1-3 complete (load, model, base measures). Sessions 4A-6 complete (the full audit table is built: cleaning, peak window, primary server, P95 latency/jitter, loss, flags, severity and D-10 columns). Sessions 7-9 pending.
+- **Images:** `docs/img/powerbi/` (`01_unit_metrics_load.png`, `02_unit_metrics_null_jitter.png`, `03_model_view_flat.png`, `04_hierarchy_matrix.png`, `05_measures_check.png`, `06_audit_data_quality_check.png`, `07_audit_core_totals.png`, `08_audit_core_control_units.png`, `09_audit_jitter_dq_check.png`, `10_audit_jitter_conflicts.png`, `11_audit_units_totals.png`, `12_audit_units_jitter_controls.png`, `13_audit_unit_metrics_totals.png`, `14_audit_unit_metrics_d10_controls.png`; numbered in order of appearance, matching Figures 1-14)
 
 ## 1. Role of Power BI in this project
 
@@ -493,7 +493,7 @@ in
     Result
 ```
 
-**Load.** `aud_jit_metrics` and `aud_core` have *Enable load* off (`aud_units` contains `aud_core`). `aud_units` is loaded (258 rows) and its numeric columns are set to *Don't summarize*. Figures 7 and 8 were taken when `aud_core` was loaded; from now on the audit table is `aud_units`.
+**Load.** `aud_jit_metrics` and `aud_core` have *Enable load* off (`aud_units` contains `aud_core`). `aud_units` is loaded (258 rows) and its numeric columns are set to *Don't summarize*. Figures 7 and 8 were taken when `aud_core` was loaded; `aud_units` was the audit table until session 6, where `aud_unit_metrics` supersedes it and `aud_units` stops being loaded.
 
 **Verification (DAX query view).**
 ```dax
@@ -523,7 +523,129 @@ ROW (
 
 **Result.** Power Query reproduces the jitter rule of the pipeline: null below 50 peak jitter records, never 0, and no jitter flag in the base case (D-07, D-09). Per-unit differences, if any, are reported in session 7.
 
-## 9. Modelling notes
+## 9. Session 6 - Risk flags, severity and D-10 columns (Prepare the data)
+
+**Goal.** Complete the per-unit audit table with `risk_flag`, `risk_severe` and the two D-10 descriptive columns, so that it has the same columns as `ftth_qoe_unit_metrics.csv` and can be reconciled in session 7. D-10 does not change the risk rule: a latency flag stays a flag even when one episode causes it; the columns only let the report separate persistent from episodic flags.
+
+### 9.1 Severe-threshold parameters
+
+Decimal Number, created as in 7.1.
+
+| Parameter | Value | Description |
+| :--- | :-: | :--- |
+| `THR_LATENCY_SEV_MS` | 50 | Severe P95 latency threshold in ms. A unit is severe when P95 is strictly greater. Mirrors `thresholds.severe.latency_p95_ms` in `config.yaml`. |
+| `THR_JITTER_SEV_MS` | 15 | Severe P95 jitter threshold in ms. Null jitter never makes a unit severe. Mirrors `thresholds.severe.jitter_p95_ms` in `config.yaml`. |
+| `THR_LOSS_SEV_PCT` | 10 | Severe packet loss threshold in percent. Mirrors `thresholds.severe.loss_pct` in `config.yaml`. |
+
+### 9.2 Queries
+
+| Query | Purpose | Loaded |
+| :--- | :--- | :-: |
+| `aud_lat_rows` | Peak records of each unit's primary server, with `lat_ms` and local `day` | No |
+| `aud_d10` | D-10 columns per unit | No |
+| `aud_unit_metrics` | Final audit table: `aud_units` + D-10 + `risk_flag` + `risk_severe` | Yes |
+
+**`aud_lat_rows`**
+```m
+let
+    Joined = Table.NestedJoin(aud_lat_peak, {"unit_id", "target"}, aud_primary, {"unit_id", "primary_target"}, "p", JoinKind.Inner),
+    OnPrimary = Table.RemoveColumns(Joined, {"p"}),
+    WithMs = Table.AddColumn(OnPrimary, "lat_ms", each [rtt_avg] / 1000, type number),
+    // day = local date of the record (dtime is already local time, D-03)
+    Result = Table.AddColumn(WithMs, "day", each Date.From([dtime]), type date)
+in
+    Result
+```
+D-10 needs the individual records per day, which `aud_lat_metrics` already aggregates. The logic of the primary-server join is repeated on purpose so the verified query is not modified.
+
+**`aud_d10`**
+```m
+let
+    P95 = (values as list) as nullable number =>
+        if List.Count(values) = 0 then null
+        else List.Percentile(values, 0.95, [PercentileMode = PercentileMode.ExcelInc]),
+    // D-10: P95 after removing the date with most records above the threshold (ties: earliest date)
+    WithoutWorstDay = (t as table) as nullable number =>
+        let
+            Above = Table.SelectRows(t, each [lat_ms] > THR_LATENCY_MS),
+            PerDay = Table.Group(Above, {"day"}, {{"n", each Table.RowCount(_), Int64.Type}}),
+            MaxN = List.Max(PerDay[n]),
+            Worst = List.Min(Table.SelectRows(PerDay, each [n] = MaxN)[day]),
+            Rest = Table.SelectRows(t, each [day] <> Worst)
+        in
+            // no record above the threshold => equals the plain P95
+            if Table.RowCount(Above) = 0 then P95(t[lat_ms]) else P95(Rest[lat_ms]),
+    Result = Table.Group(aud_lat_rows, {"unit_id"}, {
+        {"n_days_above_threshold", each List.Count(List.Distinct(Table.SelectRows(_, each [lat_ms] > THR_LATENCY_MS)[day])), Int64.Type},
+        {"p95_latency_without_worst_day_ms", each WithoutWorstDay(_), type nullable number}
+    })
+in
+    Result
+```
+The tie-break "earliest date" is `List.Min` over the tied dates. The two helper functions keep the `Table.Group` readable and avoid repeating the percentile call.
+
+**`aud_unit_metrics`**
+```m
+let
+    Joined = Table.NestedJoin(aud_units, {"unit_id"}, aud_d10, {"unit_id"}, "d", JoinKind.LeftOuter),
+    Expanded = Table.ExpandTableColumn(Joined, "d", {"n_days_above_threshold", "p95_latency_without_worst_day_ms"}),
+    // risk_flag: any of the three base flags
+    RiskFlag = Table.AddColumn(Expanded, "risk_flag",
+        each if [flag_latency] + [flag_jitter] + [flag_loss] > 0 then 1 else 0, Int64.Type),
+    // severe: strictly greater than the severe thresholds; null jitter never raises it
+    Result = Table.AddColumn(RiskFlag, "risk_severe",
+        each if [p95_latency_ms] > THR_LATENCY_SEV_MS
+                or ([p95_jitter_ms] <> null and [p95_jitter_ms] > THR_JITTER_SEV_MS)
+                or [loss_pct] > THR_LOSS_SEV_PCT then 1 else 0, Int64.Type)
+in
+    Result
+```
+The null guard on jitter is required because `null > 15` returns `null` in M, not `false`.
+
+### 9.3 Load
+
+*Enable load* is off for `aud_units`, `aud_lat_rows` and `aud_d10`. Only `aud_unit_metrics` (258 rows) is loaded, with its numeric columns set to *Don't summarize*.
+
+### 9.4 Verification (DAX query view)
+
+```dax
+// Control totals of aud_unit_metrics
+EVALUATE
+ROW (
+    "rows",       COUNTROWS ( aud_unit_metrics ),
+    "at_risk",    CALCULATE ( COUNTROWS ( aud_unit_metrics ), aud_unit_metrics[status] = "analyzed", aud_unit_metrics[risk_flag] = 1 ),
+    "severe",     CALCULATE ( COUNTROWS ( aud_unit_metrics ), aud_unit_metrics[status] = "analyzed", aud_unit_metrics[risk_severe] = 1 ),
+    "persistent", CALCULATE ( COUNTROWS ( aud_unit_metrics ), aud_unit_metrics[status] = "analyzed", aud_unit_metrics[flag_latency] = 1, aud_unit_metrics[p95_latency_without_worst_day_ms] > 20 ),
+    "episodic",   CALCULATE ( COUNTROWS ( aud_unit_metrics ), aud_unit_metrics[status] = "analyzed", aud_unit_metrics[flag_latency] = 1, aud_unit_metrics[p95_latency_without_worst_day_ms] <= 20 )
+)
+```
+
+| Control | Pipeline reference | `aud_unit_metrics` |
+| :--- | :-: | :-: |
+| Units | 258 | 258 |
+| At risk / severe (analyzed) | 5 / 1 | 5 / 1 |
+| Persistent / episodic latency flags | 4 / 1 | 4 / 1 |
+
+![aud_unit_metrics totals in DAX query view](img/powerbi/13_audit_unit_metrics_totals.png)
+
+*Figure 13. Totals of `aud_unit_metrics`: 258 units, 5 at risk, 1 severe, 4 persistent and 1 episodic latency flags.*
+
+Four control units were checked against the pipeline output:
+
+| Unit | P95 latency | Days above threshold | P95 without worst day | Severe |
+| :--- | :-: | :-: | :-: | :-: |
+| 925942 | 14.93 | 0 | 14.93 (equals P95) | 0 |
+| 24733221 | 23.96 | 7 | 22.73 | 0 |
+| 4190285 | 50.00 | 1 | 14.77 | 1 |
+| 24840041 | 35.80 | 16 | 35.61 | 0 |
+
+![aud_unit_metrics D-10 control units in DAX query view](img/powerbi/14_audit_unit_metrics_d10_controls.png)
+
+*Figure 14. D-10 control units.*
+
+**Result.** Unit 4190285 is the episodic case: its P95 (50.0035 ms) is just above the severe threshold, and removing one day brings it to 14.77 ms. The other four flagged units stay above 20 ms without their worst day. Per-unit differences, if any, are reported in session 7.
+
+## 10. Modelling notes
 
 - **Flat by design.** `unit_metrics` is the single fact table (237 analyzed units). ISP, state and Whitebox model are text columns in the same table.
 - **Population denominator.** The 258-unit population is computed with a measure (analyzed + `units_insufficient`), not through a relationship.
@@ -532,7 +654,7 @@ ROW (
 - **Slicer limitation.** `units_insufficient` is reached only through `TREATAS` on `isp` and `state`. A slicer on any other `unit_metrics` column (Whitebox model, census, speed tiers) filters analyzed units but not insufficient ones, so `Insufficient Units` and `Population Units` ignore it. Population by ISP and state is exact; other cuts need a dimension table.
 - **Trade-off.** A star schema would enable cross-filtering and reuse; out of scope here.
 
-## 10. Roadmap
+## 11. Roadmap
 
 | Session | Content | PL-300 domain |
 | :-: | :--- | :--- |
@@ -540,7 +662,7 @@ ROW (
 | 4A | Audit phase 1a: latency cleaning, row counts - **done** | Prepare the data |
 | 4B | Audit phase 1b: peak window, primary server, P95 latency, loss, flags - **done** | Prepare the data |
 | 5 | Audit phase 2: jitter cleaning (5A), P95 jitter with minimum 50 records (5B) - **done** | Prepare the data |
-| 6 | Audit phase 3: `risk_flag`, `risk_severe` and D-10 columns | Prepare the data |
+| 6 | Audit phase 3: `risk_flag`, `risk_severe` and D-10 columns - **done** | Prepare the data |
 | 7 | Per-`Unit ID` reconciliation -> `docs/reconciliation.md` | Analyze the data |
 | 8 | Report pages and narrative | Visualize and analyze |
 | 9 | Performance, documentation, publishing | Manage and secure |
