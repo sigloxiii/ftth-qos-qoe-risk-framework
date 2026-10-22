@@ -5,8 +5,8 @@ Living document. It records what was built in Power BI, the reason behind each s
 - **Tool:** Power BI Desktop 2.157.1354.0 (64-bit)
 - **Project file:** `powerbi/ftth_qoe.pbix`
 - **Last updated:** 2026-10-21
-- **Status:** Sessions 1-3 complete (load, model, base measures). Sessions 4A-6 complete (the full audit table is built: cleaning, peak window, primary server, P95 latency/jitter, loss, flags, severity and D-10 columns). Session 7A complete (per-unit reconciliation of the 237 analyzed units: 0 mismatches). Session 7B (21 insufficient units) and sessions 8-9 pending.
-- **Images:** `docs/img/powerbi/` (`01_unit_metrics_load.png`, `02_unit_metrics_null_jitter.png`, `03_model_view_flat.png`, `04_hierarchy_matrix.png`, `05_measures_check.png`, `06_audit_data_quality_check.png`, `07_audit_core_totals.png`, `08_audit_core_control_units.png`, `09_audit_jitter_dq_check.png`, `10_audit_jitter_conflicts.png`, `11_audit_units_totals.png`, `12_audit_units_jitter_controls.png`, `13_audit_unit_metrics_totals.png`, `14_audit_unit_metrics_d10_controls.png`, `15_reconciliation_totals.png`, `16_reconciliation_summary.png`; numbered in order of appearance, matching Figures 1-16)
+- **Status:** Sessions 1-3 complete (load, model, base measures). Sessions 4A-6 complete (the full audit table is built: cleaning, peak window, primary server, P95 latency/jitter, loss, flags, severity and D-10 columns). Session 7 complete (per-unit reconciliation of the 237 analyzed units and the 21 insufficient units: 0 mismatches; result in `docs/reconciliation.md`). Sessions 8-9 pending.
+- **Images:** `docs/img/powerbi/` (`01_unit_metrics_load.png`, `02_unit_metrics_null_jitter.png`, `03_model_view_flat.png`, `04_hierarchy_matrix.png`, `05_measures_check.png`, `06_audit_data_quality_check.png`, `07_audit_core_totals.png`, `08_audit_core_control_units.png`, `09_audit_jitter_dq_check.png`, `10_audit_jitter_conflicts.png`, `11_audit_units_totals.png`, `12_audit_units_jitter_controls.png`, `13_audit_unit_metrics_totals.png`, `14_audit_unit_metrics_d10_controls.png`, `15_reconciliation_totals.png`, `16_reconciliation_summary.png`, `17_reconciliation_insufficient.png`; numbered in order of appearance, matching Figures 1-17)
 
 ## 1. Role of Power BI in this project
 
@@ -645,7 +645,11 @@ Four control units were checked against the pipeline output:
 
 **Result.** Unit 4190285 is the episodic case: its P95 (50.0035 ms) is just above the severe threshold, and removing one day brings it to 14.77 ms. The other four flagged units stay above 20 ms without their worst day. Per-unit differences, if any, are reported in session 7.
 
-## 10. Session 7A - Per-unit reconciliation of the analyzed units (Analyze the data)
+## 10. Session 7 - Per-unit reconciliation (Analyze the data)
+
+Session 7A reconciles the 237 analyzed units (sections 10.1 to 10.4); session 7B reconciles the 21 insufficient units (section 10.5). The result of both is summarized in `docs/reconciliation.md`.
+
+### Session 7A - Analyzed units
 
 **Goal.** Compare, unit by unit, the audit table built in Power Query (`aud_unit_metrics`) with the pipeline output (`unit_metrics`, loaded in session 1 from `data/processed/ftth_qoe_unit_metrics.csv`), as required by `docs/metrics_spec.md`, section 8. Reconciliation is never done by totals only: every unit is compared, and a difference would be analyzed one unit at a time (window, time convention, server rule, nulls).
 
@@ -830,7 +834,63 @@ SELECTCOLUMNS (
 
 **Reading of the result.** The pipeline file stores four decimals and the audit computes without rounding, so a maximum difference of 0.000050 (half a unit of the fourth decimal) is the footprint of that rounding. It also shows that the comparison really ran: a maximum of exactly 0 in every numeric metric would have been suspicious. All differences are 20 times smaller than the tolerance. Null jitter coincides in the same 93 units, since `p95_jitter_ms` has 237 units compared and 0 mismatches.
 
-**Pending (7B).** The 21 insufficient units are not in `unit_metrics`; they are reconciled separately against `units_insufficient`, and the result of both parts is saved in `docs/reconciliation.md`.
+### 10.5 Session 7B - Insufficient units
+
+**Goal.** The 21 units below `N_MIN` are not in `unit_metrics`, so they are reconciled separately against `units_insufficient` (loaded in session 1 from `data/processed/units_insufficient_data.csv`). With 7A this covers the whole population: 237 + 21 = 258.
+
+**Design.** Same pattern as `rec_units`: full outer join by `unit_id` (converted to `Int64` on the pipeline side, as in 10.3), presence flags and an exact comparison of the three columns the pipeline reports for these units: `primary_target`, `n_peak_records` and `n_peak_jitter_records`. No P95, loss or flags exist for them because they are not scored.
+
+**`rec_insufficient`**
+```m
+// rec_insufficient: per-unit reconciliation of the units below N_MIN.
+// Audit side: aud_unit_metrics with status "insufficient".
+// Pipeline side: units_insufficient (data/processed/units_insufficient_data.csv).
+// Same design as rec_units: full outer join by unit_id, presence flags, exact comparison per metric.
+let
+    Metrics = {"primary_target", "n_peak_records", "n_peak_jitter_records"},
+    // buffered so the join does not enumerate the audit chain more than once
+    AuditRows = Table.Buffer(Table.SelectRows(aud_unit_metrics, each [status] = "insufficient")),
+    A = Table.RenameColumns(Table.SelectColumns(AuditRows, {"unit_id"} & Metrics),
+            List.Transform({"unit_id"} & Metrics, each {_, "aud_" & _})),
+    // unit_id must have the same type on both sides (text vs integer would match nothing)
+    P0 = Table.TransformColumnTypes(Table.SelectColumns(units_insufficient, {"unit_id"} & Metrics), {{"unit_id", Int64.Type}}, "en-US"),
+    P = Table.RenameColumns(P0, List.Transform({"unit_id"} & Metrics, each {_, "pip_" & _})),
+    // full outer join: a unit present on one side only must show up
+    Joined0 = Table.NestedJoin(A, {"aud_unit_id"}, P, {"pip_unit_id"}, "p", JoinKind.FullOuter),
+    Joined = Table.ExpandTableColumn(Joined0, "p", List.Transform({"unit_id"} & Metrics, each "pip_" & _)),
+    WithId = Table.AddColumn(Joined, "unit_id",
+        each if [aud_unit_id] <> null then [aud_unit_id] else [pip_unit_id], Int64.Type),
+    InAudit = Table.AddColumn(WithId, "in_audit", each [aud_unit_id] <> null, type logical),
+    InPipeline = Table.AddColumn(InAudit, "in_pipeline", each [pip_unit_id] <> null, type logical),
+    // all three metrics are exact (text or counts); null equals null only
+    Ok = List.Accumulate(Metrics, InPipeline, (state, m) =>
+        Table.AddColumn(state, "ok_" & m,
+            each Record.Field(_, "aud_" & m) = Record.Field(_, "pip_" & m), type logical)),
+    // metrics that do not match in each unit (0 = unit fully reconciled)
+    Result = Table.AddColumn(Ok, "n_mismatch",
+        each List.Count(List.Select(List.Transform(Metrics, (c) => Record.Field(_, "ok_" & c)), each _ = false)), Int64.Type)
+in
+    Result
+```
+`rec_insufficient` is loaded.
+
+**Verification.**
+```dax
+// Reconciliation of insufficient units (blank shown as 0)
+EVALUATE
+ROW (
+    "units",               COUNTROWS ( rec_insufficient ),
+    "only_in_audit",       COALESCE ( CALCULATE ( COUNTROWS ( rec_insufficient ), rec_insufficient[in_pipeline] = FALSE () ), 0 ),
+    "only_in_pipeline",    COALESCE ( CALCULATE ( COUNTROWS ( rec_insufficient ), rec_insufficient[in_audit] = FALSE () ), 0 ),
+    "units_with_mismatch", COALESCE ( CALCULATE ( COUNTROWS ( rec_insufficient ), rec_insufficient[n_mismatch] > 0 ), 0 )
+)
+```
+
+![Reconciliation of the insufficient units in DAX query view](img/powerbi/17_reconciliation_insufficient.png)
+
+*Figure 17. 21 insufficient units compared, none present on one side only, none with a mismatch.*
+
+**Result.** The 21 insufficient units match in primary server, peak latency records and peak jitter records. Together with 7A, every one of the 258 units is reconciled. The result and its limits are documented in `docs/reconciliation.md`.
 
 ## 11. Modelling notes
 
@@ -851,6 +911,6 @@ SELECTCOLUMNS (
 | 5 | Audit phase 2: jitter cleaning (5A), P95 jitter with minimum 50 records (5B) - **done** | Prepare the data |
 | 6 | Audit phase 3: `risk_flag`, `risk_severe` and D-10 columns - **done** | Prepare the data |
 | 7A | Per-`Unit ID` reconciliation of the 237 analyzed units - **done** | Analyze the data |
-| 7B | Reconciliation of the 21 insufficient units -> `docs/reconciliation.md` | Analyze the data |
+| 7B | Reconciliation of the 21 insufficient units; result in `docs/reconciliation.md` - **done** | Analyze the data |
 | 8 | Report pages and narrative | Visualize and analyze |
 | 9 | Performance, documentation, publishing | Manage and secure |
