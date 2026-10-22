@@ -5,8 +5,8 @@ Living document. It records what was built in Power BI, the reason behind each s
 - **Tool:** Power BI Desktop 2.157.1354.0 (64-bit)
 - **Project file:** `powerbi/ftth_qoe.pbix`
 - **Last updated:** 2026-10-21
-- **Status:** Sessions 1-3 complete (load, model, base measures). Sessions 4A-6 complete (the full audit table is built: cleaning, peak window, primary server, P95 latency/jitter, loss, flags, severity and D-10 columns). Sessions 7-9 pending.
-- **Images:** `docs/img/powerbi/` (`01_unit_metrics_load.png`, `02_unit_metrics_null_jitter.png`, `03_model_view_flat.png`, `04_hierarchy_matrix.png`, `05_measures_check.png`, `06_audit_data_quality_check.png`, `07_audit_core_totals.png`, `08_audit_core_control_units.png`, `09_audit_jitter_dq_check.png`, `10_audit_jitter_conflicts.png`, `11_audit_units_totals.png`, `12_audit_units_jitter_controls.png`, `13_audit_unit_metrics_totals.png`, `14_audit_unit_metrics_d10_controls.png`; numbered in order of appearance, matching Figures 1-14)
+- **Status:** Sessions 1-3 complete (load, model, base measures). Sessions 4A-6 complete (the full audit table is built: cleaning, peak window, primary server, P95 latency/jitter, loss, flags, severity and D-10 columns). Session 7A complete (per-unit reconciliation of the 237 analyzed units: 0 mismatches). Session 7B (21 insufficient units) and sessions 8-9 pending.
+- **Images:** `docs/img/powerbi/` (`01_unit_metrics_load.png`, `02_unit_metrics_null_jitter.png`, `03_model_view_flat.png`, `04_hierarchy_matrix.png`, `05_measures_check.png`, `06_audit_data_quality_check.png`, `07_audit_core_totals.png`, `08_audit_core_control_units.png`, `09_audit_jitter_dq_check.png`, `10_audit_jitter_conflicts.png`, `11_audit_units_totals.png`, `12_audit_units_jitter_controls.png`, `13_audit_unit_metrics_totals.png`, `14_audit_unit_metrics_d10_controls.png`, `15_reconciliation_totals.png`, `16_reconciliation_summary.png`; numbered in order of appearance, matching Figures 1-16)
 
 ## 1. Role of Power BI in this project
 
@@ -645,7 +645,194 @@ Four control units were checked against the pipeline output:
 
 **Result.** Unit 4190285 is the episodic case: its P95 (50.0035 ms) is just above the severe threshold, and removing one day brings it to 14.77 ms. The other four flagged units stay above 20 ms without their worst day. Per-unit differences, if any, are reported in session 7.
 
-## 10. Modelling notes
+## 10. Session 7A - Per-unit reconciliation of the analyzed units (Analyze the data)
+
+**Goal.** Compare, unit by unit, the audit table built in Power Query (`aud_unit_metrics`) with the pipeline output (`unit_metrics`, loaded in session 1 from `data/processed/ftth_qoe_unit_metrics.csv`), as required by `docs/metrics_spec.md`, section 8. Reconciliation is never done by totals only: every unit is compared, and a difference would be analyzed one unit at a time (window, time convention, server rule, nulls).
+
+### 10.1 Design
+
+- **Reference table.** `unit_metrics` is already in the model; nothing new is loaded. It contains only the 237 analyzed units, so the audit side is filtered to `status = "analyzed"`.
+- **Full outer join by `unit_id`.** Units present on one side only must appear in the result instead of disappearing, so the presence flags `in_audit` and `in_pipeline` are part of the output.
+- **Tolerances** (spec section 8): +/- 0.001 for the three P95 columns (ms) and for `loss_pct` (percentage points); exact match for `n_peak_records`, `n_peak_jitter_records`, `n_days_above_threshold` and `risk_flag`. The audit also checks, with exact match, `primary_target`, `flag_latency`, `flag_jitter`, `flag_loss` and `risk_severe`, which is stricter than the specification.
+- **Null jitter** matches only null jitter on the other side (same units with null jitter).
+- **Tolerances in one table.** `rec_spec` holds the metric list and tolerances; `rec_units` and `rec_summary` read it, so nothing is repeated.
+
+| Query | Purpose | Loaded |
+| :--- | :--- | :-: |
+| `rec_spec` | Metrics to reconcile and tolerance of each | No |
+| `rec_units` | One row per unit: values from both sides, `ok_<metric>`, `diff_<metric>`, `n_mismatch` | Yes |
+| `rec_summary` | One row per metric: units compared, mismatches, maximum absolute difference | Yes |
+
+### 10.2 Queries
+
+**`rec_spec`**
+```m
+// rec_spec: metrics to reconcile between the audit (aud_unit_metrics) and the pipeline output (unit_metrics)
+// and the tolerance for each one (docs/metrics_spec.md, section 8). Single source of truth:
+// rec_units and rec_summary both read this table, so tolerances are never repeated.
+// tolerance 0 = exact match; > 0 = maximum absolute difference allowed.
+let
+    // columns: metric name, tolerance, origin of the rule
+    Rows = {
+        {"primary_target", 0, "exact (stricter than spec)"},
+        {"n_peak_records", 0, "exact (spec section 8)"},
+        {"n_peak_jitter_records", 0, "exact (spec section 8)"},
+        {"p95_latency_ms", 0.001, "+/- 0.001 ms (spec section 8)"},
+        {"p95_jitter_ms", 0.001, "+/- 0.001 ms (spec section 8)"},
+        {"loss_pct", 0.001, "+/- 0.001 pp (spec section 8)"},
+        {"n_days_above_threshold", 0, "exact (spec section 8)"},
+        {"p95_latency_without_worst_day_ms", 0.001, "+/- 0.001 ms (spec section 8)"},
+        {"flag_latency", 0, "exact (stricter than spec)"},
+        {"flag_jitter", 0, "exact (stricter than spec)"},
+        {"flag_loss", 0, "exact (stricter than spec)"},
+        {"risk_flag", 0, "exact (spec section 8)"},
+        {"risk_severe", 0, "exact (stricter than spec)"}
+    },
+    // explicit column types so downstream queries can rely on them
+    Result = Table.FromRows(Rows, type table [metric = text, tolerance = number, rule = text])
+in
+    Result
+```
+
+**`rec_units`**
+```m
+// rec_units: per-unit reconciliation between the Power Query audit (aud_unit_metrics)
+// and the pipeline output (unit_metrics = data/processed/ftth_qoe_unit_metrics.csv).
+// One row per unit_id found on either side. For each metric in rec_spec it adds:
+//   aud_<m> / pip_<m>  values from each side
+//   ok_<m>             true when they match within the tolerance (null equals null only)
+//   diff_<m>           absolute difference (null for text columns or when one side is null)
+// n_mismatch counts the metrics that do not match. Differences are never fixed here:
+// each one is analyzed by Unit ID (docs/metrics_spec.md, section 8, point 3).
+let
+    // metric list with tolerances; Table.ToRows gives one list per metric: {name, tolerance, rule}
+    Spec = Table.ToRows(rec_spec),
+    Cols = List.Transform(Spec, each _{0}),
+    // audit side: analyzed units only, because the pipeline file contains only analyzed units.
+    // Buffered so the join does not enumerate the audit chain more than once.
+    AuditRows = Table.Buffer(Table.SelectRows(aud_unit_metrics, each [status] = "analyzed")),
+    // prefix every column with its origin so both sides can live in the same row
+    A = Table.RenameColumns(Table.SelectColumns(AuditRows, {"unit_id"} & Cols),
+            List.Transform({"unit_id"} & Cols, each {_, "aud_" & _})),
+    // unit_id is text in unit_metrics and integer in the audit; the join matches nothing unless both sides have the same type
+    P0 = Table.TransformColumnTypes(Table.SelectColumns(unit_metrics, {"unit_id"} & Cols), {{"unit_id", Int64.Type}}, "en-US"),
+    P = Table.RenameColumns(P0, List.Transform({"unit_id"} & Cols, each {_, "pip_" & _})),
+    // full outer join: units present on one side only must show up instead of disappearing
+    Joined0 = Table.NestedJoin(A, {"aud_unit_id"}, P, {"pip_unit_id"}, "p", JoinKind.FullOuter),
+    Joined = Table.ExpandTableColumn(Joined0, "p", List.Transform({"unit_id"} & Cols, each "pip_" & _)),
+    // single unit_id taken from whichever side has it
+    WithId = Table.AddColumn(Joined, "unit_id",
+        each if [aud_unit_id] <> null then [aud_unit_id] else [pip_unit_id], Int64.Type),
+    // presence flags: show units that exist on one side only
+    InAudit = Table.AddColumn(WithId, "in_audit", each [aud_unit_id] <> null, type logical),
+    InPipeline = Table.AddColumn(InAudit, "in_pipeline", each [pip_unit_id] <> null, type logical),
+    // match test: tolerance for numbers, plain equality for the rest.
+    // If either side is null the result is a = b, so null matches only null (null jitter in the same units).
+    Same = (a, b, tol) =>
+        if a = null or b = null then a = b
+        else if a is number and b is number then Number.Abs(a - b) <= tol
+        else a = b,
+    // absolute difference; try ... otherwise null covers text columns and nulls
+    Diff = (a, b) => try Number.Abs(a - b) otherwise null,
+    // List.Accumulate repeats the same step once per metric (adds the ok_ columns)
+    Ok = List.Accumulate(Spec, InPipeline, (state, m) =>
+        Table.AddColumn(state, "ok_" & m{0},
+            each Same(Record.Field(_, "aud_" & m{0}), Record.Field(_, "pip_" & m{0}), m{1}), type logical)),
+    // same pattern for the diff_ columns
+    Diffs = List.Accumulate(Spec, Ok, (state, m) =>
+        Table.AddColumn(state, "diff_" & m{0},
+            each Diff(Record.Field(_, "aud_" & m{0}), Record.Field(_, "pip_" & m{0})), type nullable number)),
+    // number of metrics that do not match in each unit (0 = unit fully reconciled)
+    Result = Table.AddColumn(Diffs, "n_mismatch",
+        each List.Count(List.Select(List.Transform(Cols, (c) => Record.Field(_, "ok_" & c)), each _ = false)), Int64.Type)
+in
+    Result
+```
+
+**`rec_summary`**
+```m
+// rec_summary: one row per reconciled metric.
+//   units_compared  units present on both sides
+//   mismatches      units outside the tolerance
+//   max_abs_diff    largest absolute difference (null for text columns)
+// It summarizes rec_units; reconciliation itself is judged unit by unit, never by these totals alone.
+let
+    // only units present on both sides are comparable; one-sided units are reported separately.
+    // Table.Buffer evaluates rec_units once; without it every reference below re-reads the whole audit chain from the CSV.
+    Both = Table.Buffer(Table.SelectRows(rec_units, each [in_audit] and [in_pipeline])),
+    // one result row per metric listed in rec_spec
+    Rows = List.Transform(Table.ToRows(rec_spec), (m) => {
+        m{0},                                                                          // metric
+        m{1},                                                                          // tolerance
+        Table.RowCount(Both),                                                          // units compared
+        Table.RowCount(Table.SelectRows(Both, each Record.Field(_, "ok_" & m{0}) = false)),  // mismatches
+        List.Max(Table.Column(Both, "diff_" & m{0}))}),                                // max abs difference
+    Result = Table.FromRows(Rows, type table [metric = text, tolerance = number,
+        units_compared = Int64.Type, mismatches = Int64.Type, max_abs_diff = nullable number])
+in
+    Result
+```
+
+*Enable load* is off for `rec_spec`; `rec_units` and `rec_summary` are loaded.
+
+### 10.3 Problems found and how they were resolved
+
+| Symptom | Cause | Fix |
+| :--- | :--- | :--- |
+| `rec_units` had 474 rows: 237 only in the audit, 237 only in the pipeline, 474 with mismatches | `unit_id` is text in `unit_metrics` (column icon ABC; statistics showed Min 1000023 > Max 998971, text order) and integer in the audit. In M, text "925942" does not equal number 925942, so the join matched nothing | `unit_id` of `unit_metrics` is converted to `Int64` inside `rec_units`. `unit_metrics` itself is not changed: text is reasonable for an identifier and the session 1 query was already verified |
+| Loading `rec_summary` read 3.98 GB from `udplatency_ftth.csv` and could not be cancelled quickly | Power Query tables are lazy: each of the ~40 references to `rec_units` re-evaluated the whole audit chain down to the CSV | `Table.Buffer` on `Both` (`rec_summary`) and on `AuditRows` (`rec_units`); loaded in two steps (first `rec_units`, then `rec_summary`) |
+| Blank cells instead of 0 in the DAX totals | `CALCULATE ( COUNTROWS (...) )` returns blank, not 0, when no row matches | `COALESCE ( ..., 0 )` in the verification query |
+| `rec_summary` showed `0` for every tolerance and difference | The query view rounds to 2 decimals (the tolerance 0.001 was shown as 0) | `FORMAT ( ..., "0.000000" )` in the verification query |
+
+The full outer join and the presence flags made the first problem obvious in the first run. With an inner join the table would have been empty with no explanation.
+
+### 10.4 Verification (DAX query view)
+
+```dax
+// Reconciliation totals (blank shown as 0)
+EVALUATE
+ROW (
+    "units",               COUNTROWS ( rec_units ),
+    "only_in_audit",       COALESCE ( CALCULATE ( COUNTROWS ( rec_units ), rec_units[in_pipeline] = FALSE () ), 0 ),
+    "only_in_pipeline",    COALESCE ( CALCULATE ( COUNTROWS ( rec_units ), rec_units[in_audit] = FALSE () ), 0 ),
+    "units_with_mismatch", COALESCE ( CALCULATE ( COUNTROWS ( rec_units ), rec_units[n_mismatch] > 0 ), 0 )
+)
+```
+
+![Reconciliation totals in DAX query view](img/powerbi/15_reconciliation_totals.png)
+
+*Figure 15. 237 units compared, none present on one side only, none with a mismatch.*
+
+```dax
+// rec_summary with 6 decimals (the grid rounds to 2)
+EVALUATE
+SELECTCOLUMNS (
+    rec_summary,
+    "metric",         rec_summary[metric],
+    "tolerance",      FORMAT ( rec_summary[tolerance], "0.000000" ),
+    "units_compared", rec_summary[units_compared],
+    "mismatches",     rec_summary[mismatches],
+    "max_abs_diff",   FORMAT ( rec_summary[max_abs_diff], "0.000000" )
+)
+```
+
+![Reconciliation summary by metric in DAX query view](img/powerbi/16_reconciliation_summary.png)
+
+*Figure 16. 13 metrics x 237 units, 0 mismatches; largest difference 0.000050 in P95 latency, P95 jitter, loss and P95 without the worst day.*
+
+| Metric group | Tolerance | Mismatches | Maximum absolute difference |
+| :--- | :-: | :-: | :-: |
+| `n_peak_records`, `n_peak_jitter_records`, `n_days_above_threshold` | exact | 0 | 0 |
+| `flag_latency`, `flag_jitter`, `flag_loss`, `risk_flag`, `risk_severe` | exact | 0 | 0 |
+| `primary_target` | exact | 0 | not applicable (text) |
+| `p95_latency_ms`, `p95_jitter_ms`, `p95_latency_without_worst_day_ms` | 0.001 ms | 0 | 0.000050 |
+| `loss_pct` | 0.001 pp | 0 | 0.000050 |
+
+**Reading of the result.** The pipeline file stores four decimals and the audit computes without rounding, so a maximum difference of 0.000050 (half a unit of the fourth decimal) is the footprint of that rounding. It also shows that the comparison really ran: a maximum of exactly 0 in every numeric metric would have been suspicious. All differences are 20 times smaller than the tolerance. Null jitter coincides in the same 93 units, since `p95_jitter_ms` has 237 units compared and 0 mismatches.
+
+**Pending (7B).** The 21 insufficient units are not in `unit_metrics`; they are reconciled separately against `units_insufficient`, and the result of both parts is saved in `docs/reconciliation.md`.
+
+## 11. Modelling notes
 
 - **Flat by design.** `unit_metrics` is the single fact table (237 analyzed units). ISP, state and Whitebox model are text columns in the same table.
 - **Population denominator.** The 258-unit population is computed with a measure (analyzed + `units_insufficient`), not through a relationship.
@@ -654,7 +841,7 @@ Four control units were checked against the pipeline output:
 - **Slicer limitation.** `units_insufficient` is reached only through `TREATAS` on `isp` and `state`. A slicer on any other `unit_metrics` column (Whitebox model, census, speed tiers) filters analyzed units but not insufficient ones, so `Insufficient Units` and `Population Units` ignore it. Population by ISP and state is exact; other cuts need a dimension table.
 - **Trade-off.** A star schema would enable cross-filtering and reuse; out of scope here.
 
-## 11. Roadmap
+## 12. Roadmap
 
 | Session | Content | PL-300 domain |
 | :-: | :--- | :--- |
@@ -663,6 +850,7 @@ Four control units were checked against the pipeline output:
 | 4B | Audit phase 1b: peak window, primary server, P95 latency, loss, flags - **done** | Prepare the data |
 | 5 | Audit phase 2: jitter cleaning (5A), P95 jitter with minimum 50 records (5B) - **done** | Prepare the data |
 | 6 | Audit phase 3: `risk_flag`, `risk_severe` and D-10 columns - **done** | Prepare the data |
-| 7 | Per-`Unit ID` reconciliation -> `docs/reconciliation.md` | Analyze the data |
+| 7A | Per-`Unit ID` reconciliation of the 237 analyzed units - **done** | Analyze the data |
+| 7B | Reconciliation of the 21 insufficient units -> `docs/reconciliation.md` | Analyze the data |
 | 8 | Report pages and narrative | Visualize and analyze |
 | 9 | Performance, documentation, publishing | Manage and secure |
