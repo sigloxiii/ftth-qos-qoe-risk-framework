@@ -4,9 +4,9 @@ Living document. It records what was built in Power BI, the reason behind each s
 
 - **Tool:** Power BI Desktop 2.157.1354.0 (64-bit)
 - **Project file:** `powerbi/ftth_qoe.pbix`
-- **Last updated:** 2026-10-21
-- **Status:** Sessions 1-3 complete (load, model, base measures). Sessions 4A-6 complete (the full audit table is built: cleaning, peak window, primary server, P95 latency/jitter, loss, flags, severity and D-10 columns). Session 7 complete (per-unit reconciliation of the 237 analyzed units and the 21 insufficient units: 0 mismatches; result in `docs/reconciliation.md`). Sessions 8-9 pending.
-- **Images:** `docs/img/powerbi/` (`01_unit_metrics_load.png`, `02_unit_metrics_null_jitter.png`, `03_model_view_flat.png`, `04_hierarchy_matrix.png`, `05_measures_check.png`, `06_audit_data_quality_check.png`, `07_audit_core_totals.png`, `08_audit_core_control_units.png`, `09_audit_jitter_dq_check.png`, `10_audit_jitter_conflicts.png`, `11_audit_units_totals.png`, `12_audit_units_jitter_controls.png`, `13_audit_unit_metrics_totals.png`, `14_audit_unit_metrics_d10_controls.png`, `15_reconciliation_totals.png`, `16_reconciliation_summary.png`, `17_reconciliation_insufficient.png`; numbered in order of appearance, matching Figures 1-17)
+- **Last updated:** 2026-10-22
+- **Status:** Sessions 1-3 complete (load, model, base measures). Sessions 4A-6 complete (the full audit table is built: cleaning, peak window, primary server, P95 latency/jitter, loss, flags, severity and D-10 columns). Session 7 complete (per-unit reconciliation of the 237 analyzed units and the 21 insufficient units: 0 mismatches; result in `docs/reconciliation.md`). Session 8 (report) in progress: pages 1-3 built (section 11); pages 4-6 and session 9 pending.
+- **Images:** `docs/img/powerbi/` (`01_unit_metrics_load.png`, `02_unit_metrics_null_jitter.png`, `03_model_view_flat.png`, `04_hierarchy_matrix.png`, `05_measures_check.png`, `06_audit_data_quality_check.png`, `07_audit_core_totals.png`, `08_audit_core_control_units.png`, `09_audit_jitter_dq_check.png`, `10_audit_jitter_conflicts.png`, `11_audit_units_totals.png`, `12_audit_units_jitter_controls.png`, `13_audit_unit_metrics_totals.png`, `14_audit_unit_metrics_d10_controls.png`, `15_reconciliation_totals.png`, `16_reconciliation_summary.png`, `17_reconciliation_insufficient.png`, `18_report_overview.png`, `19_report_latency.png`, `20_report_at_risk_units.png`; numbered in order of appearance, matching Figures 1-20)
 
 ## 1. Role of Power BI in this project
 
@@ -892,7 +892,171 @@ ROW (
 
 **Result.** The 21 insufficient units match in primary server, peak latency records and peak jitter records. Together with 7A, every one of the 258 units is reconciled. The result and its limits are documented in `docs/reconciliation.md`.
 
-## 11. Modelling notes
+## 11. Session 8 - Report pages and narrative (Visualize and analyze)
+
+**Status:** in progress. Pages 1-3 are built and verified; pages 4-6 are pending.
+
+**Goal.** Turn the verified model into a multi-page report in which each page answers one question and its title states the conclusion. The report only reads `unit_metrics`, `units_insufficient`, `variants_matrix`, `sensitivity_grid` and `data_quality_log`; the audit and reconciliation tables (`aud_*`, `rec_*`) are not used by any visual.
+
+### 11.1 Design decisions
+
+| Decision | Chosen | Rationale |
+| :--- | :--- | :--- |
+| Structure | One question per page, six pages plus a hidden `0 Model Check` page | Readability; each section can be reviewed and tested separately. |
+| Page titles | Dynamic headline measure (a conclusion, not a label) | The reader gets the answer first. The sentence recomputes with the ISP slicer, so it never contradicts the numbers below it. |
+| Theme | Custom theme file `powerbi/theme/ftth_qoe_theme.json` (View > Themes > Browse for themes) | One place for colours, fonts and card styling; reproducible from the repository. |
+| Colour | Colour follows the entity: Cincinnati Bell blue, Frontier orange, Verizon green in every chart. Red `#D03B3B` is reserved for risk (at risk, severe, threshold lines). | Consistent reading across pages; status colour is never reused for an ISP. |
+| Slicer | One ISP slicer, synced across pages (View > Sync slicers) | The reader filters once and every page stays coherent. |
+| Comparison charts | Edit interactions set to *None* from the slicer | A chart that compares the three ISPs must keep showing all three when one is selected. |
+
+The report page plan is:
+
+| Page | Question it answers |
+| :--- | :--- |
+| 1 Overview | How many analyzed units are at risk, and where? |
+| 2 Latency | Which units exceed the 20 ms P95 latency threshold, and by how much? |
+| 3 At-risk units | Which units are at risk, and is the problem persistent or episodic (D-10)? |
+| 4 Jitter and loss | What do jitter and loss add? How many units cannot be measured (D-07)? |
+| 5 Sensitivity | How much does the result change with the choices that were not obvious (time zone, server, `N_MIN`)? |
+| 6 Data quality and method | How were the 258 units filtered, and what are the limits? |
+
+### 11.2 Theme and canvas
+
+- **Theme file:** `powerbi/theme/ftth_qoe_theme.json`. Data colours `#2A78D6 #EB6834 #1BAF7A #EDA100 #E87BA4 #008300 #6250D6 #E34948`, page background `#F9F9F7`, visual background `#FCFCFB`, visual border `#E1E0D9` with radius 6, `good #0CA30C`, `neutral #FAB219`, `bad #D03B3B`. Callout text 28 pt Segoe UI Semibold; titles and headers 12 pt; labels 10 pt.
+- **Canvas size:** every page must be **16:9, 1280 x 720**. New pages inherited a 1920 x 1080 canvas from the page they were created from, which compressed all visuals into the left two thirds of the page (**Format page > Canvas settings > Type: 16:9** corrects it). The size was fixed on every page.
+- **Grid:** all positions are set numerically (Format visual > General > Properties > Size and Position), so pages line up. Margin 24 px, gap 16 px, content width 1232 px.
+
+| Element | Horizontal | Vertical | Width | Height |
+| :--- | :-: | :-: | :-: | :-: |
+| Headline | 24 | 16 | 760 | 56 |
+| ISP slicer | 800 | 16 | 456 | 56 |
+| Content area | 24 | 88 | 1232 | 608 |
+
+### 11.3 Page 1 - Overview
+
+**Measure** (`_Measures`, display folder `4 Report`):
+
+```dax
+Headline Overview =
+VAR _risk = [At Risk Units]
+VAR _n = [Analyzed Units]
+RETURN
+    IF (
+        _n = 0,
+        "No analyzed units in the current selection",
+        _risk & " of " & _n & " analyzed FTTH units (" & FORMAT ( [% At Risk], "0.0%" ) & ") "
+            & IF ( _risk = 1, "is", "are" ) & " at risk"
+    )
+```
+
+| Visual | Fields | Notes |
+| :--- | :--- | :--- |
+| Headline (card) | `Headline Overview` | Card background and border off; value 28 pt. |
+| ISP slicer | `unit_metrics[isp]` | Horizontal button layout (Visual > Multi-button layout > Layout > Horizontal); button text size under Visual > Callout > Value (12 pt). |
+| Four cards | `Population Units` ("Units in Scope"), `Analyzed Units`, `At Risk Units`, `Severe Units` | At Risk and Severe values in red `#D03B3B`. H 24 / 336 / 648 / 960, V 88, W 296, Height 96. |
+| Clustered bar | Y-axis and Legend `isp`, X-axis `% At Risk`, tooltips `At Risk Units` and `Analyzed Units` | Title "% of analyzed units at risk, by ISP", data labels with one decimal, legend off. H 24, V 200, W 400, Height 496. Slicer interaction set to None. |
+| Matrix | Rows: hierarchy `ISP -> State`; values `Analyzed Units`, `At Risk Units`, `% At Risk` | Sorted by `At Risk Units`, descending. H 440, V 200, W 816, Height 496. |
+
+**Verification.** With no filter: headline "5 of 237 analyzed FTTH units (2.1%) are at risk", cards 258 / 237 / 5 / 1, matrix total 237 / 5 / 2.1 %. With Frontier selected: 62 / 61 / 1 / 0 and "1 of 61 ... (1.6%) is at risk", while the bar chart still shows the three ISPs. By ISP: Verizon 2 of 68 (2.9 %), Cincinnati Bell 2 of 108 (1.9 %), Frontier 1 of 61 (1.6 %).
+
+![Report page 1: headline, four cards, % at risk by ISP and ISP -> State matrix](img/powerbi/18_report_overview.png)
+
+*Figure 18. Page 1 (Overview) with no ISP selected.*
+
+### 11.4 Page 2 - Latency
+
+**Measure:**
+
+```dax
+Headline Latency =
+VAR _n = [Analyzed Units]
+VAR _f = [Latency Flags]
+RETURN
+    IF (
+        _n = 0,
+        "No analyzed units in the current selection",
+        _f & " of " & _n & " analyzed units "
+            & IF ( _f = 1, "exceeds", "exceed" ) & " 20 ms P95 latency"
+    )
+```
+
+**Bins (group).** A histogram needs the P95 grouped into equal-width intervals. In the Data pane, right-click `unit_metrics[p95_latency_ms]` > **New group**, Group type **Bin**, Bin type **Size of bins**, size **2 ms**. The new field `p95_latency_ms (bins)` is a model column; it does not change `p95_latency_ms`. Each interval is closed on the left and open on the right ([22-24) contains 22.0 but not 24.0), and 20 ms is a bin edge, so no interval mixes units below and above the threshold.
+
+| Visual | Fields | Notes |
+| :--- | :--- | :--- |
+| Stacked column chart | X-axis `p95_latency_ms (bins)` (continuous), Y-axis `Analyzed Units`, Legend `isp` | Title "P95 latency distribution of analyzed units vs the 20 ms threshold". Dashed red constant line at 20 on the X-axis (Analytics pane) with the label "Threshold 20 ms". H 24, V 88, W 816, Height 608. |
+| Cards | `Analyzed Units`, `Latency Flags` | H 860, V 88 and V 200, W 396, Height 96. |
+| Table | `unit_id`, `isp`, `state`, `p95_latency_ms` | Visual filter `flag_latency` = 1, sorted by P95 descending, P95 set to *Don't summarize*. Title "Units above the 20 ms threshold". H 860, V 312, W 396, Height 384. |
+
+**Verification.** The headline reads "5 of 237 ..." and the table lists exactly the five units of the D-10 table in `docs/decisions.md` (4190285 Verizon MD 50.0; 24840041 Frontier CA 35.8; 25314177 Verizon NY 30.5; 24733221 Cincinnati Bell OH 24.0; 943226 Cincinnati Bell OH 23.1). The histogram's tail beyond 20 ms holds the same five units (the interval [22-24) holds two: 23.13 and 23.96 ms).
+
+![Report page 2: latency histogram with the 20 ms threshold and the five units above it](img/powerbi/19_report_latency.png)
+
+*Figure 19. Page 2 (Latency): five units above 20 ms; the rest of the distribution is concentrated between 10 and 14 ms.*
+
+### 11.5 Page 3 - At-risk units
+
+**Measures and column.** The persistent/episodic split of D-10 is descriptive only: it does not change `risk_flag` (see `docs/decisions.md`).
+
+```dax
+Persistent Flags =
+COALESCE (
+    CALCULATE ( [Latency Flags], unit_metrics[p95_latency_without_worst_day_ms] > 20 ),
+    0
+)
+
+Episodic Flags =
+COALESCE (
+    CALCULATE ( [Latency Flags], unit_metrics[p95_latency_without_worst_day_ms] <= 20 ),
+    0
+)
+
+Headline At Risk =
+VAR _r = [At Risk Units]
+RETURN
+    IF (
+        _r = 0,
+        "No at-risk units in the current selection",
+        _r & IF ( _r = 1, " unit is", " units are" ) & " at risk: "
+            & [Persistent Flags] & " persistent, " & [Episodic Flags] & " episodic"
+    )
+```
+
+Calculated column in `unit_metrics` (Table tools > New column), used as a label in the table:
+
+```dax
+Latency Pattern =
+SWITCH (
+    TRUE (),
+    unit_metrics[flag_latency] <> 1, BLANK (),
+    unit_metrics[p95_latency_without_worst_day_ms] > 20, "Persistent",
+    "Episodic"
+)
+```
+
+| Visual | Fields | Notes |
+| :--- | :--- | :--- |
+| Table | `unit_id`, `isp`, `state`, `p95_latency_ms`, `p95_latency_without_worst_day_ms`, `n_days_above_threshold`, `Latency Pattern` | Visual filter `risk_flag` = 1; sorted by P95 descending. H 24, V 88, W 816, Height 232. |
+| Clustered bar | Y-axis `unit_id` (categorical), X-axis `p95_latency_ms` and `p95_latency_without_worst_day_ms` (Average) | Visual filter `risk_flag` = 1. Neutral greys `#52514E` and `#B9B7AE`, so the two series do not reuse ISP colours. Dashed red constant line at 20 ms. Legend on (two series). H 24, V 332, W 816, Height 364. |
+| Cards | `Persistent Flags`, `Episodic Flags` | H 860, V 88 and V 200, W 396, Height 96. |
+| Text box | Reading guide (definitions of persistent and episodic, D-10, unit 4190285) | H 860, V 312, W 396, Height 384; background `#FCFCFB`, border `#E1E0D9`. |
+
+**Verification.** The headline reads "5 units are at risk: 4 persistent, 1 episodic", equal to the totals of Figure 13 (4 / 1). The P95 without the worst day of the five units (14.8, 35.6, 23.1, 22.7, 22.9 ms) and their days above the threshold (1, 16, 9, 7, 9) equal the D-10 table in `docs/decisions.md`. Only unit 4190285 falls below 20 ms when its worst day is removed.
+
+![Report page 3: five at-risk units, P95 with and without the worst day, persistent and episodic counts](img/powerbi/20_report_at_risk_units.png)
+
+*Figure 20. Page 3 (At-risk units): 5 at risk, 4 persistent and 1 episodic.*
+
+### 11.6 Report-building notes (Power BI Desktop 2.157.1354.0)
+
+- The properties pane has **Size** (Height, Width) and **Position** (Horizontal, Vertical); there is no "X/Y" naming.
+- The new ISP slicer is a button slicer. Orientation is under **Visual > Multi-button layout > Layout**; text size under **Visual > Callout > Value**.
+- **Edit interactions** (Format tab) stays active until its button is pressed again; the filter and "none" icons on every visual show that the mode is still on.
+- Pasting a slicer onto another page offers **Sync visuals**; *Sync* keeps the ISP selection across pages. Check View > Sync slicers for the pages where it is shown.
+- The text box's **+ Value** button opens a dynamic-value dialog (Copilot); plain text is typed in the body of the box. Spelling underlines appear only while editing.
+- Screenshots: use **Win+Shift+S**. Alt+PrtScn activates the KeyTips and they appear in the image.
+
+## 12. Modelling notes
 
 - **Flat by design.** `unit_metrics` is the single fact table (237 analyzed units). ISP, state and Whitebox model are text columns in the same table.
 - **Population denominator.** The 258-unit population is computed with a measure (analyzed + `units_insufficient`), not through a relationship.
@@ -901,7 +1065,7 @@ ROW (
 - **Slicer limitation.** `units_insufficient` is reached only through `TREATAS` on `isp` and `state`. A slicer on any other `unit_metrics` column (Whitebox model, census, speed tiers) filters analyzed units but not insufficient ones, so `Insufficient Units` and `Population Units` ignore it. Population by ISP and state is exact; other cuts need a dimension table.
 - **Trade-off.** A star schema would enable cross-filtering and reuse; out of scope here.
 
-## 12. Roadmap
+## 13. Roadmap
 
 | Session | Content | PL-300 domain |
 | :-: | :--- | :--- |
@@ -912,5 +1076,5 @@ ROW (
 | 6 | Audit phase 3: `risk_flag`, `risk_severe` and D-10 columns - **done** | Prepare the data |
 | 7A | Per-`Unit ID` reconciliation of the 237 analyzed units - **done** | Analyze the data |
 | 7B | Reconciliation of the 21 insufficient units; result in `docs/reconciliation.md` - **done** | Analyze the data |
-| 8 | Report pages and narrative | Visualize and analyze |
+| 8 | Report pages and narrative: pages 1-3 **done**, pages 4-6 pending | Visualize and analyze |
 | 9 | Performance, documentation, publishing | Manage and secure |

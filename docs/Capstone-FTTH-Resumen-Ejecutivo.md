@@ -11,7 +11,7 @@ Imagina que eres un ISP de fibra óptica (FTTH). Algunas de tus casas tienen un 
 
 La pregunta: en el horario pico nocturno local (19:00-22:59), cuando muchos ven streaming, juegan y hacen videollamadas, ¿qué casas muestran calidad degradada? Y ¿cuánto de esa degradación es real, y cuánto es un artefacto del equipo de medición o del propio análisis?
 
-**Resultado clave:** pendiente. El alcance es de 258 unidades FTTH. El número de unidades analizadas y el de unidades en riesgo se publicarán solo cuando termine la reconciliación Python ↔ Power BI (el pipeline y sus pruebas automáticas ya están terminados; ver el roadmap del README). Las cifras de versiones anteriores (v1, v2.x) son inválidas y no se reutilizan.
+**Resultado clave:** de las 258 unidades FTTH del alcance, 237 pudieron analizarse (21 tienen pocos registros) y 5 de ellas (2.1%) están en riesgo: 4 con un problema de latencia persistente y 1 episódico. El conteo depende de la regla de registros mínimos (entre 1 y 7 unidades en riesgo) y se confirmó unidad por unidad entre Python y Power BI (0 diferencias). Las cifras de versiones anteriores (v1, v2.x) son inválidas y no se reutilizan.
 
 ### 2. ¿Qué mide cada registro? (Explicado sin tecnicismos)
 
@@ -40,7 +40,7 @@ Estos umbrales son **umbrales operativos definidos por el proyecto**, no valores
 | `curr_udplatency.csv` | FACT - Latencia + pérdida | 1 prueba horaria | `unit_id, dtime, target, rtt_avg (µs), successes, failures` |
 | `curr_udpjitter.csv` | FACT - Jitter | 1 prueba de flujo UDP | `unit_id, dtime, target, jitter_up, jitter_down` |
 | `curr_udpcloss.csv` | Eventos de caída (solo referencia) | 1 evento de caída | `unit_id, dtime, duration, packets` - NO es un porcentaje de pérdida |
-| `ftth_qoe_unit_metrics.csv` | FACT de salida (planeado) | 1 unidad analizada | `unit_id, p95_latency_ms, p95_jitter_ms, loss_pct, risk_flag, risk_severe` |
+| `ftth_qoe_unit_metrics.csv` | FACT de salida | 1 unidad analizada | `unit_id, p95_latency_ms, p95_jitter_ms, loss_pct, risk_flag, risk_severe` |
 
 **Reglas de oro:**
 - microsegundos crudos / 1000 = ms.
@@ -66,7 +66,7 @@ Una unidad usa de 1 a 4 servidores de prueba a distintas distancias. Las métric
 `risk_flag = 1` si latencia > 20 ms O jitter > 5 ms O pérdida > 1% (estrictamente mayor). `risk_severe` usa 50 ms / 15 ms / 10%. Con cada resultado se reporta una rejilla de sensibilidad de umbrales.
 
 **Paso 6 - Power BI:**
-Power BI consume solo `data/processed/ftth_qoe_unit_metrics.csv`; no recalcula métricas. Python y Power BI se reconcilian por `Unit ID` con tolerancias explícitas (`docs/reconciliation.md`, planeado).
+Power BI consume solo `data/processed/ftth_qoe_unit_metrics.csv`; no recalcula métricas. Python y Power BI se reconcilian por `Unit ID` con tolerancias explícitas (`docs/reconciliation.md`).
 
 ### 5. Glosario Rápido (Para stakeholder no técnico)
  (Glosario COMPLETO en `docs/glossary_of_terms.md`)

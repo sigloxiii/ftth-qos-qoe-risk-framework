@@ -11,7 +11,7 @@ Imagine you are a fiber ISP (FTTH). Some of your homes have a small white box (W
 
 The question: in the local evening peak (19:00-22:59), when many people stream, game and video-call, which homes show degraded quality? And how much of that degradation is real, versus an artifact of the measuring device or of the analysis?
 
-**Key result:** pending. The scope is 258 FTTH units. The number of units analyzed and the number at risk will be published only after the Python ↔ Power BI reconciliation is complete (the pipeline and its automated tests are already done; see the README roadmap). Figures from earlier versions (v1, v2.x) are invalid and are not reused.
+**Key result:** of the 258 FTTH units in scope, 237 could be analyzed (21 have too few records) and 5 of them (2.1%) are at risk: 4 with a persistent latency problem and 1 episodic. The count depends on the minimum-records rule (between 1 and 7 units at risk) and was confirmed unit by unit between Python and Power BI (0 mismatches). Figures from earlier versions (v1, v2.x) are invalid and are not reused.
 
 ### 2. What does each record measure? (No jargon)
 
@@ -40,7 +40,7 @@ These thresholds are **project-defined operating thresholds**, not values from a
 | `curr_udplatency.csv` | FACT - Latency + loss | 1 hourly test | `unit_id, dtime, target, rtt_avg (µs), successes, failures` |
 | `curr_udpjitter.csv` | FACT - Jitter | 1 UDP stream test | `unit_id, dtime, target, jitter_up, jitter_down` |
 | `curr_udpcloss.csv` | Outage events (reference only) | 1 outage event | `unit_id, dtime, duration, packets` - NOT a loss percentage |
-| `ftth_qoe_unit_metrics.csv` | Output FACT (planned) | 1 analyzed unit | `unit_id, p95_latency_ms, p95_jitter_ms, loss_pct, risk_flag, risk_severe` |
+| `ftth_qoe_unit_metrics.csv` | Output FACT | 1 analyzed unit | `unit_id, p95_latency_ms, p95_jitter_ms, loss_pct, risk_flag, risk_severe` |
 
 **Golden rules:**
 - raw microseconds / 1000 = ms.
@@ -66,7 +66,7 @@ A unit uses 1 to 4 test servers at different distances. Metrics use the unit's *
 `risk_flag = 1` if latency > 20 ms OR jitter > 5 ms OR loss > 1% (strictly greater). `risk_severe` uses 50 ms / 15 ms / 10%. A threshold sensitivity grid is reported with every result.
 
 **Step 6 - Power BI:**
-Power BI consumes only `data/processed/ftth_qoe_unit_metrics.csv`; it does not recalculate metrics. Python and Power BI are reconciled per `Unit ID` with explicit tolerances (`docs/reconciliation.md`, planned).
+Power BI consumes only `data/processed/ftth_qoe_unit_metrics.csv`; it does not recalculate metrics. Python and Power BI are reconciled per `Unit ID` with explicit tolerances (`docs/reconciliation.md`).
 
 ### 5. Quick Glossary (For non-technical stakeholder)
  (FULL Glossary in `docs/glossary_of_terms.md`)
