@@ -224,5 +224,5 @@ Automated tests (`tests/`):
 
 - **Jitter test length:** observed `duration` (about 15 s) against the documented 10 s.
 - **Fiber time convention:** the local reading was not tested on Fiber (18 Pacific units).
-- **Power BI reconciliation:** unit-by-unit comparison per section 8, saved in `docs/reconciliation.md`.
+- **Power BI reconciliation:** done on 2026-10-21 (258 units, 0 mismatches), unit by unit per section 8, saved in `docs/reconciliation.md`.
 - Closed on 2026-10-18: `config.yaml` aligned with D-06 to D-10, `pipeline.py` applies D-07 explicitly, and the data dictionary and data inspection record check 6 and the jitter unit evidence.

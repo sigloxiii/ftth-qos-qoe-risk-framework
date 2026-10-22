@@ -170,7 +170,7 @@ time:
   peak_end_hour_exclusive: 23   # 19:00:00 to 22:59:59 local
 ```
 
-**Implementation (planned, `src/pipeline.py`):**
+**Implementation (`src/pipeline.py`):**
 ```python
 # v2 assumed dtime was UTC and added an offset, without testing the assumption
 # v3.0, D-03: dtime already is local time, no offset
@@ -322,7 +322,7 @@ The figures are reproduced by `step_9.py` over the same units; `pipeline.py` mus
 - `data/processed/units_insufficient_data.csv` - fewer than 50 peak records
 - `data/processed/data_quality_log.csv` - data quality counters, duplicates and units with null jitter
 
-**Reproducibility (planned):**
+**Reproducibility:**
 ```bash
 # config.yaml has raw_dir: null (commitable)
 # config.local.yaml is gitignored:
@@ -350,11 +350,12 @@ Dependencies: pandas and PyYAML (plus openpyxl to read the unit profile).
 | `src/pipeline.py` | Done |
 | `tests/` (21 checks) | Done, all passing |
 | Pipeline run and `data/processed/` outputs | Done: reproduces section 5 unit by unit |
-| Power BI dashboard and Python <-> Power BI reconciliation | Pending |
+| Python <-> Power BI reconciliation | Done: 258 units, 0 mismatches (`docs/reconciliation.md`) |
+| Power BI report | In progress: pages 1-3 of 6 (`docs/powerbi_implementation.md`) |
 | Results and findings section | Pending |
 
 **Remaining workflow**
-1. Power BI over `data/processed/` only, and reconciliation by `Unit ID` (`docs/reconciliation.md`).
+1. Finish the Power BI report (pages 4-6) and session 9 (performance, documentation, publishing).
 2. Results and findings section, and the final README update.
 
 Done on 2026-10-17: `src/pipeline.py` applies D-07 explicitly (the base case in `step_9.py` runs without a jitter minimum; the result is the same), the pipeline reproduces the base case and the matrix of section 5, and `tests/` passes. One difference with `step_11.py`: with ties in the worst day, the pipeline removes the earliest date (D-10), so `p95_latency_without_worst_day_ms` is 22.73 for unit 24733221 and 35.61 for unit 24840041 (`step_11.py` printed 23.98 and 35.81); no flag or conclusion changes (`step_11_1.py`).

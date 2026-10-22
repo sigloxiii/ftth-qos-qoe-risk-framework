@@ -10,7 +10,7 @@ Living document. It records what was built in Power BI, the reason behind each s
 
 ## 1. Role of Power BI in this project
 
-The metrics are computed once, in `src/pipeline.py` (single implementation, covered by `tests/test_unit_metrics.py`). The report **consumes** `data/processed/` and does not recompute metrics. A separate set of Power Query audit queries will independently recompute them from the interim files and be reconciled per `Unit ID` (see `docs/metrics_spec.md`, section 8, and the future `docs/reconciliation.md`).
+The metrics are computed once, in `src/pipeline.py` (single implementation, covered by `tests/test_unit_metrics.py`). The report **consumes** `data/processed/` and does not recompute metrics. A separate set of Power Query audit queries independently recomputes them from the interim files and is reconciled per `Unit ID` (see `docs/metrics_spec.md`, section 8, and the result in `docs/reconciliation.md`).
 
 ## 2. Design decisions
 

@@ -162,7 +162,7 @@ Raw data: FCC MBA validated data, 2022 release (13th Measuring Broadband America
 4. Exploration scripts (available now): run `python src/steps/step_1.py` first (it creates the interim CSVs from the raw files), then any other step. They print to the console; the recorded output of each is in its `OUTPUT` docstring. The scripts read absolute Windows paths (`BASE`, `RAW`, `INTERIM`) that must be edited to run elsewhere (see `src/README.md`).
 5. Run the pipeline: `python src/pipeline.py`. The first run reads the raw files (several minutes) and caches the FTTH rows in `data/interim/pipeline_*_ftth.csv`; later runs reuse the cache (`--refresh-cache` re-reads the raw files, `--no-variants` skips the 2×2 matrix and the D-08 grid). It writes the five files of `data/processed/` and reproduces the figures in `docs/procedure_summary_v3.md` unit by unit.
 6. Validate with tests: `python -m pytest tests -v` (run from the repository root, after step 5). 21 checks: population 258/27 and exclusion files, `N_MIN`, jitter null only below the minimum and never 0, loss range, flags against thresholds, D-10 columns, data-quality log, and the base-case reference (237 / 21 / 5).
-7. Reconcile Power BI (done): Power BI consumes ONLY `data/processed/` and is compared per `Unit ID` with the tolerances of `docs/metrics_spec.md` section 8 (±0.001 ms for P95 latency and jitter, ±0.001 percentage points for loss, exact match for `risk_flag`), saved in `docs/reconciliation.md`.
+7. Reconcile Power BI (done): The Power BI report consumes ONLY `data/processed/`; an independent set of Power Query audit queries recomputes the metrics from `data/interim/` and is compared with `data/processed/` per `Unit ID` with the tolerances of `docs/metrics_spec.md` section 8 (±0.001 ms for P95 latency and jitter, ±0.001 percentage points for loss, exact match for `risk_flag`), saved in `docs/reconciliation.md`.
 
 ## 6. Roadmap
 
@@ -197,7 +197,7 @@ Raw data: FCC MBA validated data, 2022 release (13th Measuring Broadband America
 - [`docs/decisions.md`](docs/decisions.md): decision log D-01 to D-10 with alternatives and evidence.
 - [`docs/data_dictionary.md`](docs/data_dictionary.md): meaning of every input column, with sources and pending verifications.
 - [`docs/data_inspection.md`](docs/data_inspection.md): Step 0 results and checks.
-- [`docs/procedure_summary_v3.md`](docs/procedure_summary_v3.md): procedure from Step 0 to Step 11 and provisional base-case results.
+- [`docs/procedure_summary_v3.md`](docs/procedure_summary_v3.md): procedure from Step 0 to Step 11 and base-case results (confirmed by the reconciliation).
 - [`src/README.md`](src/README.md): script map and how to run the steps.
 - [`data/CSV_previews.md`](data/CSV_previews.md): first rows of each raw file and what they show.
 - [`docs/glossary_of_terms.md`](docs/glossary_of_terms.md): glossary of terms.
