@@ -66,7 +66,7 @@ A unit uses 1 to 4 test servers at different distances. Metrics use the unit's *
 `risk_flag = 1` if latency > 20 ms OR jitter > 5 ms OR loss > 1% (strictly greater). `risk_severe` uses 50 ms / 15 ms / 10%. A threshold sensitivity grid is reported with every result.
 
 **Step 6 - Power BI:**
-Power BI consumes only `data/processed/ftth_qoe_unit_metrics.csv`; it does not recalculate metrics. Python and Power BI are reconciled per `Unit ID` with explicit tolerances (`docs/reconciliation.md`).
+  Power BI consumes `data/processed/ftth_qoe_unit_metrics.csv`, `units_insufficient_data.csv`, `variants_matrix.csv`, `sensitivity_grid.csv` and `data_quality_log.csv`; it does not recalculate metrics. Python and Power BI are reconciled per `Unit ID` with explicit tolerances (`docs/reconciliation.md`).
 
 ### 5. Quick Glossary (For non-technical stakeholder)
  (FULL Glossary in `docs/glossary_of_terms.md`)

@@ -351,8 +351,8 @@ Dependencies: pandas and PyYAML (plus openpyxl to read the unit profile).
 | `tests/` (21 checks) | Done, all passing |
 | Pipeline run and `data/processed/` outputs | Done: reproduces section 5 unit by unit |
 | Python <-> Power BI reconciliation | Done: 258 units, 0 mismatches (`docs/reconciliation.md`) |
-| Power BI report | In progress: pages 1-3 of 6 (`docs/powerbi_implementation.md`) |
-| Results and findings section | Pending |
+| Power BI report | Finalized (`docs/powerbi_implementation.md`) |
+| Results and findings section | Finalized |
 
 **Remaining workflow**
 1. Finish the Power BI report (pages 4-6) and session 9 (performance, documentation, publishing).

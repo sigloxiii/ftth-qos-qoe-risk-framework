@@ -1,10 +1,7 @@
 # ftth-qos-qoe-risk-framework - requirements v3.0 - CSV only
 # Python >=3.10
 
-pandas>=2.2.0,<3.0       # procesamiento de datos y cálculo de métricas QoE (P95, agregaciones)
-numpy>=1.26.0,<2.2       # operaciones numéricas y soporte de percentiles
-pyyaml>=6.0.1            # lectura de archivo de configuración
-openpyxl>=3.1.2          # lectura de archivos Excel de entrada
-python-dateutil>=2.8.2   # manejo y parsing de fechas y horas
-tqdm>=4.66.0             # barras de progreso en procesamiento
-pytest>=8.0               # pruebas automáticas (tests/)
+pandas>=2.2.0,<3.0       # data processing and QoE metrics calculation (P95, aggregations)
+numpy>=1.26.0,<2.2       # numerical operations and percentile support
+pyyaml>=6.0.1            # configuration file parsing (config.yaml)
+pytest>=8.0              # automated testing (tests/)

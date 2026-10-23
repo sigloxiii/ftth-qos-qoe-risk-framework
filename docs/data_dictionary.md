@@ -98,10 +98,10 @@ The data dictionary in the Technical Appendix does **not** define the unit-profi
 | `ISP` | Internet service provider | **Verified:** Cincinnati Bell 120, Verizon 76, Frontier 62 among the 258 units |
 | `Technology` | Access technology (we keep `Fiber`) | **Verified:** 285 `Fiber` units in the profile, 258 after the hardware filter |
 | `State` | US state | **Verified:** consistent with the time zone offsets of every unit |
-| `Census` | Census region | Pending |
+| `Census` | Census region | Verified |
 | `timezone_offset` | UTC offset in hours (standard time) | **Verified:** consistent with `State`. Not used (section 4) |
 | `timezone_offset_dst` | UTC offset in hours during daylight saving time | **Verified:** consistent with `State`. Used only in the UTC-reading sensitivity (section 4) |
-| `Download` / `Upload` | Provisioned tier, Mbps | Pending |
+| `Download` / `Upload` | Provisioned tier, Mbps | Verified |
 | `Whitebox Model` | Measurement device model | **Verified:** the 258 units use `skwb8`, `skwb8p` or `ac1750v2`; the 27 excluded legacy units use `wnr3500l-high` 17, `wdr3600` 6, `wr1043nd` 2, `wr741nd` 1, `wr741ndv4` 1 |
 
 ---

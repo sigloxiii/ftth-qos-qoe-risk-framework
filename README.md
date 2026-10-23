@@ -4,14 +4,14 @@
 ### FCC QoE Risk Analysis / Análisis de Riesgo QoE
 
 **Author:** Eng. Rafael Cansigno P. | Data Analyst | Telecom + BI · Google Data Analytics Capstone (Track B, self-directed) · September–October 2026
-**Stack:** Python | Power BI | VS Code | SQL
+**Stack:** Python | Power BI | VS Code
 **KPIs:** P95 Latency | Jitter | Packet Loss
 
 > Identifying fiber (FTTH) subscribers at risk of poor Quality of Experience (QoE) from FCC Measuring Broadband America telemetry, using a reproducible and auditable pipeline.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 ![Data: FCC MBA Sept-Oct 2022](https://img.shields.io/badge/Data-FCC%20MBA%20Sept--Oct%202022-blue)
-![Status: Methodology v3 in progress](https://img.shields.io/badge/Status-Methodology%20v3%20in%20progress-orange)
+![Status: Methodology v3 implemented](https://img.shields.io/badge/Status-Methodology%20v3%20implemented-green)
 
 ---
 
@@ -70,7 +70,7 @@ Full definitions are in [`docs/metrics_spec.md`](docs/metrics_spec.md) v1.2.0 an
 - Rationale: the Whitebox is the measurement instrument. A device that cannot forward traffic at line rate creates the degradation it reports. Filter uses nominal capability, not per-unit throughput test (see Limitations).
 
 **Peak window - DECISION D-03**
-- **D-03 (2026-10-11): `dtime` is treated as LOCAL time, not UTC.** Planned implementation in `src/pipeline.py`: `local_hour = hour(dtime)`. No offset added. `dtime_format: "%Y-%m-%d %H:%M:%S"` string with no TZ marker (verified Step 0, not unix epoch).
+- **D-03 (2026-10-11): `dtime` is treated as LOCAL time, not UTC.** Already Implemented in `src/pipeline.py`: `local_hour = hour(dtime)`. No offset added. `dtime_format: "%Y-%m-%d %H:%M:%S"` string with no TZ marker (verified Step 0, not unix epoch).
 - Evidence (Step 7/8): FCC dictionary says UTC, but hourly RTT profile of Pacific units (UTC-7) does not trail Eastern (UTC-4) by 3h as UTC would imply. Correlation at +3h shift ~0 or negative; best alignment -1 to -2h, much closer to 0 (local) than to +3 (UTC).
   - Cable: k=0 corr 0.762 vs k=+3 -0.107, best k=-1 0.892, peak Eastern 21h / Pacific 20h (dtime hour)
   - DSL: k=0 0.594 vs k=+3 -0.018, best k=-2 0.799, peak 21h/19h
@@ -119,27 +119,30 @@ ftth-qos-qoe-risk-framework/
 │   ├── excluded_legacy_units.csv       # All out-of-scope (audit, includes 27)
 │   ├── unit-profile-sept2022.xlsx   # FCC unit profile (source)
 │   ├── CSV_previews.md      # first 10 rows of raw files (verified structure)
-│   ├── interim/             # CSV intermediates created by step_1.py, gitignored
-│   └── processed/           # pipeline output: ftth_qoe_unit_metrics.csv, units_insufficient_data.csv, data_quality_log.csv, variants_matrix.csv, sensitivity_grid.csv
+│   ├── interim/             # CSV intermediates created by step_1.py and pipeline.py, gitignored
+│   └── processed/           # pipeline output (5 CSV files) and its README.md
 ├── docs/
 │   ├── metrics_spec.md      # source of truth v1.2.0 for all metrics
 │   ├── decisions.md         # decision log D-01 to D-10 with alternatives and evidence
 │   ├── data_dictionary.md   # meaning of every input column, with Step 0 verification (real vs FCC dictionary)
 │   ├── data_inspection.md   # Step 0 results and checks
 │   ├── procedure_summary_v3.md  # procedure overview, Step 0 to Step 11
+│   ├── reconciliation.md    # Python ↔ Power BI unit-level reconciliation (258 units, 0 mismatches)
+│   ├── powerbi_implementation.md  # Power BI implementation log (sessions 1-9)
 │   ├── glossary_of_terms.md
 │   ├── Capstone-FTTH-Executive-Brief-EN.md      # executive brief (English)
 │   ├── Capstone-FTTH-Resumen-Ejecutivo.md       # executive brief (Spanish)
-│   ├── reconciliation.md    # Python ↔ Power BI unit-level reconciliation (258 units, 0 mismatches)
-│   └── lessons_learned.md   # (planned)
+│   └── img/powerbi/         # numbered evidence screenshots (Figures 1-27)
 ├── src/
 │   ├── README.md            # script map and how to run the steps
-│   ├── steps/               # step_0.py ... step_11.py: exploration scripts, one per decision or check
+│   ├── steps/               # step_0.py ... step_11.py, step_11_1.py: exploration scripts, one per decision or check
 │   └── pipeline.py          # single implementation; reads config.yaml and the config.local.yaml override
-├── tests/                   # test_unit_metrics.py: 21 checks on data/processed (population 258/27, N_MIN, jitter nulls, loss range, flags, D-10 columns, base-case reference)
-├── powerbi/                 # Power BI report (.pbix), PDF export and theme
+├── tests/                   # test_unit_metrics.py: 21 checks on data/processed
+├── powerbi/                 # ftth_qoe.pbix, ftth_qoe_report.pdf and theme/ftth_qoe_theme.json
 ├── config.yaml              # single source of truth for values (methodology 3.0, spec 1.2.0, raw_dir: null)
-├── requirements.txt         # pandas, numpy, pyyaml, openpyxl, python-dateutil, tqdm, pytest
+├── config.local.yaml.example  # template for config.local.yaml (gitignored)
+├── requirements.txt         # Python dependencies
+├── .gitignore
 └── LICENSE
 ```
 

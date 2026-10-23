@@ -84,7 +84,7 @@ The wide table is split in two for readability.
 | :--- | :--- | :--- |
 | Headers vs dictionary | All three files include a `ddate` column that the dictionary does not list for `curr_udplatency` and `curr_udpjitter`. `location_id` (listed for `curr_udplatency`) is not present. The jitter file header uses `latency` in lowercase; the dictionary writes `Latency` | Differences found; use the real headers |
 | `curr_udpcloss` meaning | `duration` ≈ 4.5 s with `packets` = 2 per event. The latency test sends about one packet every 1.8 s (~2,000 per hour), so ~4.5 s of outage corresponds to 2–3 lost packets. This is consistent with `packets` being a count of lost packets per event, not a percentage | Consistent with the dictionary (inference, not proof) |
-| Time unit | `duration` in `curr_udpjitter` ≈ 14,996,277, i.e. about 15 s if the unit is microseconds | µs confirmed for `duration`; jitter unit still pending |
+| Time unit | `duration` in `curr_udpjitter` ≈ 14,996,277, i.e. about 15 s if the unit is microseconds | µs confirmed for `duration`; jitter unit indirectly supported |
 | Jitter magnitude | `jitter_up` / `jitter_down` between 218 and 55,714; as microseconds this is 0.2–55.7 ms, a plausible range | Consistent with µs, not proven |
 | Jitter test length | Dictionary documents a 10 s test at 64 kbps; the preview shows `duration` ≈ 15 s with 500 packets per direction at 160 bytes | Discrepancy to explain; not used in metrics |
 | `successes` / `failures` in jitter | Always 1 / 0 in the preview, as the dictionary states | Not usable as a loss count |

@@ -894,7 +894,7 @@ ROW (
 
 ## 11. Session 8 - Report pages and narrative (Visualize and analyze)
 
-**Status:** pages 1-6 are built and verified against the pipeline output; a final review of the report and session 9 are pending.
+**Status:** pages 1-6 are built and verified against the pipeline output.
 
 **Goal.** Turn the verified model into a multi-page report in which each page answers one question and its title states the conclusion. The report only reads `unit_metrics`, `units_insufficient`, `variants_matrix`, `sensitivity_grid` and `data_quality_log`; the audit and reconciliation tables (`aud_*`, `rec_*`) are not used by any visual.
 
