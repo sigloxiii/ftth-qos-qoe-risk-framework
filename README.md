@@ -25,7 +25,7 @@ The analysis focuses on three metrics measured in the local evening peak window:
 
 **Why P95 instead of the average?** The average hides the tail: a unit can have a 15 ms average latency and still show much higher values in a share of its hours. The 95th percentile (P95) is the value that 95% of the measurements do not exceed, so it describes the poorer end of the distribution, where bad QoE lives. Each `rtt_avg` value is itself the average of one hourly test, so the P95 here summarizes the *hourly averages*; spikes inside a single test are only visible in `rtt_max`.
 
-**Current status:** Methodology v3 is specified (`docs/metrics_spec.md` v1.2.0, decisions D-01 to D-10) and the data inspection (Step 0) and the exploration scripts (`src/steps/step_0.py` to `step_11.py`) are complete. The single pipeline (`src/pipeline.py`) and its automated tests (`tests/`, 21 passing) are complete, and the pipeline reproduces the exploration figures unit by unit. The Python ↔ Power BI reconciliation is complete (258 units, 0 mismatches; [`docs/reconciliation.md`](docs/reconciliation.md)), so the base-case figures in [`docs/procedure_summary_v3.md`](docs/procedure_summary_v3.md) and `data/processed/` are confirmed results. The Power BI report is under construction (pages 1-3 of 6 built; [`docs/powerbi_implementation.md`](docs/powerbi_implementation.md)).
+**Current status:** Methodology v3 is specified (`docs/metrics_spec.md` v1.2.0, decisions D-01 to D-10) and the data inspection (Step 0) and the exploration scripts (`src/steps/step_0.py` to `step_11.py`) are complete. The single pipeline (`src/pipeline.py`) and its automated tests (`tests/`, 21 passing) are complete, and the pipeline reproduces the exploration figures unit by unit. The Python ↔ Power BI reconciliation is complete (258 units, 0 mismatches; [`docs/reconciliation.md`](docs/reconciliation.md)), so the base-case figures in [`docs/procedure_summary_v3.md`](docs/procedure_summary_v3.md) and `data/processed/` are confirmed results. The Power BI report is complete (6 pages, exported to [`powerbi/ftth_qoe_report.pdf`](powerbi/ftth_qoe_report.pdf); row-level security tested in Desktop; implementation log in [`docs/powerbi_implementation.md`](docs/powerbi_implementation.md)).
 
 ## 2. Why Version 3 Was Necessary
 
@@ -137,7 +137,7 @@ ftth-qos-qoe-risk-framework/
 │   ├── steps/               # step_0.py ... step_11.py: exploration scripts, one per decision or check
 │   └── pipeline.py          # single implementation; reads config.yaml and the config.local.yaml override
 ├── tests/                   # test_unit_metrics.py: 21 checks on data/processed (population 258/27, N_MIN, jitter nulls, loss range, flags, D-10 columns, base-case reference)
-├── powerbi/                 # Power BI report (.pbix, in progress) and theme
+├── powerbi/                 # Power BI report (.pbix), PDF export and theme
 ├── config.yaml              # single source of truth for values (methodology 3.0, spec 1.2.0, raw_dir: null)
 ├── requirements.txt         # pandas, numpy, pyyaml, openpyxl, python-dateutil, tqdm, pytest
 └── LICENSE
@@ -178,10 +178,55 @@ Raw data: FCC MBA validated data, 2022 release (13th Measuring Broadband America
 - [x] Pipeline: raw → unit-level metrics (CSV) with DQ log - `src/pipeline.py`, `data/processed/`
 - [x] Automated tests (21 passing) - `tests/test_unit_metrics.py`
 - [x] Unit-level Python ↔ Power BI reconciliation - `docs/reconciliation.md`
-- [ ] Power BI report (pages 1-3 of 6 built) - `powerbi/`, `docs/powerbi_implementation.md`
-- [ ] Results and findings section
+- [x] Power BI report (6 pages, PDF export, RLS tested) - `powerbi/`, `docs/powerbi_implementation.md`
+- [x] Results and findings section - section 7 of this README
 
-## 7. Limitations
+## 7. Results and Findings
+
+Base case: local time, primary server, `N_MIN` = 50, thresholds 20 ms / 5 ms / 1 % (D-01 to D-10). Figures come from `data/processed/` and were reproduced independently in Power BI (0 mismatches, [`docs/reconciliation.md`](docs/reconciliation.md)). The report is in [`powerbi/ftth_qoe_report.pdf`](powerbi/ftth_qoe_report.pdf) (six pages; the model is `powerbi/ftth_qoe.pbix`).
+
+![Report overview](docs/img/powerbi/18_report_overview.png)
+
+### Headline
+
+**5 of 237 analyzed FTTH units (2.1 %) are at risk.** The other 21 of the 258 units in scope (8 %) have fewer than 50 peak records and are reported but not scored.
+
+| ISP | Analyzed | Set aside | At risk | % at risk | Median P95 latency |
+| :--- | :-: | :-: | :-: | :-: | :-: |
+| Cincinnati Bell | 108 | 12 | 2 | 1.9 % | 13.6 ms |
+| Frontier | 61 | 1 | 1 | 1.6 % | 7.3 ms |
+| Verizon | 68 | 8 | 2 | 2.9 % | 12.0 ms |
+| **Total** | **237** | **21** | **5** | **2.1 %** | **12.2 ms** |
+
+The differences between ISPs rest on one or two units each, so they are not evidence that one provider performs better than another.
+
+### Findings
+
+1. **Latency is the only metric that separates units.** Five units exceed 20 ms P95 latency, none exceeds 5 ms P95 jitter and one exceeds 1 % loss. Unit 24840041 (Frontier, CA) exceeds both latency (35.8 ms) and loss (1.66 %); the next highest loss is 0.83 %.
+2. **Most flags are persistent.** Four of the five at-risk units stay above 20 ms after removing their worst day. The fifth, 4190285 (Verizon, MD), is episodic: its P95 is 50.0035 ms, the only severe case, but falls to 14.77 ms without its worst day (the severe tier rests on an interpolated P95 just above 50 ms).
+3. **Jitter cannot be assessed for 39 % of the analyzed units.** 93 units have fewer than 50 peak jitter records and their jitter stays empty (never 0): Cincinnati Bell 69 of 108, Verizon 17 of 68, Frontier 7 of 61. The jitter result covers 144 units (maximum 4.48 ms).
+4. **Several units sit close to the threshold.** 34 units have a P95 latency between 15 and 20 ms, so a small change in the thresholds or the sample moves the count.
+5. **The count depends on method choices, not only on the data.**
+
+| Choice | Units at risk |
+| :--- | :-: |
+| Base case (local time, primary server, `N_MIN` 50) | 5 |
+| All test servers instead of the primary one | 21 |
+| UTC reading of `dtime`, primary server / all servers | 4 / 17 |
+| `N_MIN` 30 / 50 / 100 | 7 / 5 / 1 |
+| Whole threshold grid (108 combinations) | 1 to 30 |
+
+The server rule has the largest effect, which is why the single-server rule (D-04, D-06) is documented as a decision, not a detail.
+
+### What this means
+
+- At the project thresholds, the large majority of the analyzed FTTH units show no peak-hour QoE risk, and the units that do are mostly latency cases that persist over time.
+- The headline number belongs to one set of method choices. Using all servers or a lower `N_MIN` raises it (21 and 7); a higher `N_MIN` lowers it (1). It should be read with its sensitivity range, not as a single figure.
+- Jitter and loss add little in this sample; latency drives the result. The jitter coverage gap is a data limit, not evidence of good jitter.
+
+These results are bound by the limits in section 8: one period (2022), a non-random sample of volunteer units and project-defined thresholds.
+
+## 8. Limitations
 
 - Data from a single release period (2022) and a non-random sample of volunteer units; results do not generalize to all FTTH subscribers.
 - The population covers three ISPs, and 220 of the 258 units (85%) are in the US Eastern time zone.
@@ -191,19 +236,21 @@ Raw data: FCC MBA validated data, 2022 release (13th Measuring Broadband America
 - The jitter unit (µs) is supported indirectly, not documented, and jitter is dominated by the upstream value. Jitter is evaluated for about 61% of the analyzed units in the base case; the rest have fewer than 50 peak jitter records.
 - The number of units at risk is sensitive to `N_MIN`, and some flags are episodic (one day) or close to the threshold; both are reported with the result.
 
-## 8. Documentation Index
+## 9. Documentation Index
 
 - [`docs/metrics_spec.md`](docs/metrics_spec.md): metric definitions, data quality rules, reconciliation protocol.
 - [`docs/decisions.md`](docs/decisions.md): decision log D-01 to D-10 with alternatives and evidence.
 - [`docs/data_dictionary.md`](docs/data_dictionary.md): meaning of every input column, with sources and pending verifications.
 - [`docs/data_inspection.md`](docs/data_inspection.md): Step 0 results and checks.
 - [`docs/procedure_summary_v3.md`](docs/procedure_summary_v3.md): procedure from Step 0 to Step 11 and base-case results (confirmed by the reconciliation).
+- [`docs/powerbi_implementation.md`](docs/powerbi_implementation.md): Power BI implementation log (sessions 1-9, report pages, performance, row-level security) and [`powerbi/ftth_qoe_report.pdf`](powerbi/ftth_qoe_report.pdf): exported report.
+- [`data/processed/README.md`](data/processed/README.md): description of the output files and key findings.
 - [`src/README.md`](src/README.md): script map and how to run the steps.
 - [`data/CSV_previews.md`](data/CSV_previews.md): first rows of each raw file and what they show.
 - [`docs/glossary_of_terms.md`](docs/glossary_of_terms.md): glossary of terms.
 - [`docs/Capstone-FTTH-Executive-Brief-EN.md`](docs/Capstone-FTTH-Executive-Brief-EN.md) and [`docs/Capstone-FTTH-Resumen-Ejecutivo.md`](docs/Capstone-FTTH-Resumen-Ejecutivo.md): executive brief in English and Spanish.
 - [`archive/`](archive/): v1 and v2 material, kept as a record of the iteration.
 
-## 9. License
+## 10. License
 
 MIT. See [LICENSE](LICENSE).
