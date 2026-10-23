@@ -15,7 +15,7 @@ import pandas as pd
 
 BASE = r"D:\Capstone FTTH"
 INTERIM = BASE + r"\data\interim"
-T_LAT, T_JIT, T_LOSS = 20, 5, 1.0  # umbrales base de la spec
+T_LAT, T_JIT, T_LOSS = 20, 5, 1.0  # base thresholds of the spec
 
 units = pd.read_csv(BASE + r"\data\fiber_units.csv", encoding="utf-8-sig")
 units = units.rename(columns={"Unit ID": "unit_id"})
@@ -28,20 +28,20 @@ lat["rtt_ms"] = lat["rtt_avg"] / 1000
 lat["total"] = lat["successes"] + lat["failures"]
 jit["jitter_ms"] = (jit["jitter_up"] + jit["jitter_down"]) / 2 / 1000
 
-# Hora según cada convención
+# Hour under each convention
 for df in (lat, jit):
     df["h_spec"] = (df["dtime"] + pd.to_timedelta(df["timezone_offset_dst"], unit="h")).dt.hour
-    df["h_alt"] = df["dtime"].dt.hour  # dtime tomado como hora local
+    df["h_alt"] = df["dtime"].dt.hour  # dtime taken as local time
 
 def primary_only(df):
-    # Conserva solo los registros del servidor con más registros en la unidad
+    # Keeps only the records of the server with the most records in the unit
     cnt = df.groupby(["unit_id", "target"]).size().reset_index(name="n")
-    # Desempate reproducible: más registros primero; si empatan, nombre alfabético
+    # Reproducible tie-break: most records first; if tied, alphabetical name
     main = cnt.sort_values(["n", "target"], ascending=[False, True]).drop_duplicates("unit_id")
     return df.merge(main[["unit_id", "target"]], on=["unit_id", "target"])
 
 def metrics(hour_col):
-    # hour_col=None usa todas las horas
+    # hour_col=None uses all hours
     l, j = lat, jit
     if hour_col:
         l = lat[(lat[hour_col] >= 19) & (lat[hour_col] < 23)]
@@ -51,9 +51,9 @@ def metrics(hour_col):
     out = pd.DataFrame({
         "p95_lat": g["rtt_ms"].quantile(0.95),
         "p95_jit": j.groupby("unit_id")["jitter_ms"].quantile(0.95),
-        "loss": g["failures"].sum() / g["total"].sum() * 100,  # razón de sumas
+        "loss": g["failures"].sum() / g["total"].sum() * 100,  # ratio of sums
     }).reindex(units["unit_id"])
-    # Un NaN no supera ningún umbral: la unidad sin datos no se marca (ni se rellena con 0)
+    # A NaN does not exceed any threshold: a unit without data is not flagged (nor filled with 0)
     out["risk"] = ((out["p95_lat"] > T_LAT) | (out["p95_jit"] > T_JIT) | (out["loss"] > T_LOSS)).astype(int)
     return out
 
@@ -65,7 +65,7 @@ for name, X in [("B (dtime como hora local)", B), ("C (todas las horas)", C)]:
     changed = A.index[A["risk"] != X["risk"]]
     print(f"\nVariante {name} vs spec: {len(changed)} unidades cambian de risk_flag")
     if len(changed) > 0:
-        # Métricas de las unidades que cambian, lado a lado
+        # Metrics of the units that change, side by side
         print(pd.concat([A.loc[changed], X.loc[changed]], axis=1, keys=["spec", "variante"]).round(2))
     print("  Diferencia máxima P95 latencia (ms):", round((A["p95_lat"] - X["p95_lat"]).abs().max(), 2))
     print("  Diferencia máxima P95 jitter (ms):", round((A["p95_jit"] - X["p95_jit"]).abs().max(), 2))

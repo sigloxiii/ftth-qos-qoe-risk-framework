@@ -6,3 +6,4 @@ data/interim/
 config.local.yaml
 .env
 Thumbs.db
+.vscode/

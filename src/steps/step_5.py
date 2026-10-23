@@ -14,7 +14,7 @@ import pandas as pd
 
 BASE = r"D:\Capstone FTTH"
 INTERIM = BASE + r"\data\interim"
-T_LAT, T_JIT, T_LOSS = 20, 5, 1.0  # umbrales base de la spec
+T_LAT, T_JIT, T_LOSS = 20, 5, 1.0  # base thresholds of the spec
 
 units = pd.read_csv(BASE + r"\data\fiber_units.csv", encoding="utf-8-sig")
 units = units.rename(columns={"Unit ID": "unit_id"})
@@ -28,14 +28,14 @@ lat["total"] = lat["successes"] + lat["failures"]
 jit["jitter_ms"] = (jit["jitter_up"] + jit["jitter_down"]) / 2 / 1000
 
 def in_peak(df):
-    # Ventana pico [19, 23) con hora local = UTC + offset DST
+    # Peak window [19, 23) with local hour = UTC + DST offset
     hour = (df["dtime"] + pd.to_timedelta(df["timezone_offset_dst"], unit="h")).dt.hour
     return df[(hour >= 19) & (hour < 23)]
 
 lat, jit = in_peak(lat), in_peak(jit)
 
 def primary_only(df):
-    # Conserva solo los registros del servidor con más registros pico en cada unidad
+    # Keeps only the records of the server with the most peak records in each unit
     cnt = df.groupby(["unit_id", "target"]).size().reset_index(name="n")
     main = cnt.sort_values("n", ascending=False).drop_duplicates("unit_id")[["unit_id", "target"]]
     return df.merge(main, on=["unit_id", "target"])
@@ -45,9 +45,9 @@ def metrics(l, j):
     out = pd.DataFrame({
         "p95_lat": g["rtt_ms"].quantile(0.95),
         "p95_jit": j.groupby("unit_id")["jitter_ms"].quantile(0.95),
-        "loss": g["failures"].sum() / g["total"].sum() * 100,  # razón de sumas
+        "loss": g["failures"].sum() / g["total"].sum() * 100,  # ratio of sums
     }).reindex(units["unit_id"])
-    # Un NaN no supera ningún umbral: la unidad sin datos no se marca (ni se rellena con 0)
+    # A NaN does not exceed any threshold: a unit without data is not flagged (nor filled with 0)
     out["risk"] = ((out["p95_lat"] > T_LAT) | (out["p95_jit"] > T_JIT) | (out["loss"] > T_LOSS)).astype(int)
     return out
 
@@ -67,7 +67,7 @@ d = (A["p95_lat"] - B["p95_lat"]).abs()
 print("Diferencia en P95 de latencia A vs B (ms):\n", d.describe().round(2))
 print("Unidades con diferencia > 1 ms / > 3 ms:", int((d > 1).sum()), int((d > 3).sum()))
 
-# Las 5 unidades con mayor diferencia de RTT mediano entre servidores
+# The 5 units with the largest median RTT difference between servers
 pair = lat.groupby(["unit_id", "target"])["rtt_ms"].agg(["median", "count"])
 g2 = pair.groupby("unit_id")["median"]
 spread = (g2.max() - g2.min()).sort_values(ascending=False)

@@ -66,7 +66,7 @@ Una unidad usa de 1 a 4 servidores de prueba a distintas distancias. Las métric
 `risk_flag = 1` si latencia > 20 ms O jitter > 5 ms O pérdida > 1% (estrictamente mayor). `risk_severe` usa 50 ms / 15 ms / 10%. Con cada resultado se reporta una rejilla de sensibilidad de umbrales.
 
 **Paso 6 - Power BI:**
-  Power BI usa `data/processed/ftth_qoe_unit_metrics.csv`, `units_insufficient_data.csv`, `variants_matrix.csv`, `sensitivity_grid.csv` and `data_quality_log.csv`; no recalcula métricas.
+  Power BI usa `data/processed/ftth_qoe_unit_metrics.csv`, `units_insufficient_data.csv`, `variants_matrix.csv`, `sensitivity_grid.csv` y `data_quality_log.csv`; no recalcula métricas.
 Python y Power BI se reconcilian por `Unit ID` con tolerancias explícitas (`docs/reconciliation.md`).
 
 ### 5. Glosario Rápido (Para stakeholder no técnico)

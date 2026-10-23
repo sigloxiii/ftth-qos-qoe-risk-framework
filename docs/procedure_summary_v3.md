@@ -355,7 +355,6 @@ Dependencies: pandas and PyYAML (plus openpyxl to read the unit profile).
 | Results and findings section | Finalized |
 
 **Remaining workflow**
-1. Finish the Power BI report (pages 4-6) and session 9 (performance, documentation, publishing).
-2. Results and findings section, and the final README update.
+None. The project is finalized: the pipeline, the tests, the reconciliation, the Power BI report (6 pages and a PDF export) and the results section are done.
 
 Done on 2026-10-17: `src/pipeline.py` applies D-07 explicitly (the base case in `step_9.py` runs without a jitter minimum; the result is the same), the pipeline reproduces the base case and the matrix of section 5, and `tests/` passes. One difference with `step_11.py`: with ties in the worst day, the pipeline removes the earliest date (D-10), so `p95_latency_without_worst_day_ms` is 22.73 for unit 24733221 and 35.61 for unit 24840041 (`step_11.py` printed 23.98 and 35.81); no flag or conclusion changes (`step_11_1.py`).

@@ -33,7 +33,7 @@ Reference for the standards, measurement concepts, network metrics, business con
 - **Population / units in scope (project):** the 258 FTTH units that pass the hardware filter. They split into *analyzed* units (237, with at least `N_MIN` peak records) and *insufficient* units (21).
 - **Active measurement:** a test that generates its own traffic to measure the network (as opposed to passive monitoring of user traffic). All MBA tests used here are active.
 - **Target:** the server or host a test is run against (`target` column).
-- **On-net / Off-net node:** a test server inside the ISP's own network (on-net) or outside it (off-net). The MBA documentation states that one of each is tested hourly. **(project)** Whether to analyze them separately is a pending decision in the metrics specification.
+- **On-net / Off-net node:** a test server inside the ISP's own network (on-net) or outside it (off-net). The MBA documentation states that one of each is tested hourly. **(project)** Whether any latency or jitter target is on-net is an open question recorded in `docs/data_inspection.md`; all targets are treated alike.
 - **Peak hours:** evening period with the highest network demand. **(project)** Defined here as local time 19:00–22:59; FCC reports describe an evening peak period, to be confirmed in the Technical Appendix.
 - **UTC (Coordinated Universal Time):** the reference time standard. FCC `dtime` values are documented as UTC (with a documented exception for `curr_udpcloss`).
 - **DST (Daylight Saving Time):** seasonal clock shift of one hour. It changes the UTC offset used to convert `dtime` into local time (`timezone_offset` vs `timezone_offset_dst`).
