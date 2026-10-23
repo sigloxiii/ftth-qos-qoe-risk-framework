@@ -6,7 +6,7 @@
 #               to remove differences caused by the technology mix of each region
 #            If dtime is UTC, the Pacific pattern lags the Eastern one by 3 hours (best k = 3).
 #            If dtime is local, both patterns align (best k near 0).
-# Inputs:    data/unit-profile-sept2022.csv
+# Inputs:    data/unit-profile-sept2022.xlsx
 #            data/raw/validated-data-sept2022/curr_udplatency.csv
 # Outputs:   Console only (results are documented in docs/data_inspection.md)
 
@@ -15,7 +15,7 @@ import pandas as pd
 BASE = r"D:\Capstone FTTH"
 RAW = BASE + r"\data\raw\validated-data-sept2022"
 
-prof = pd.read_csv(BASE + r"\data\unit-profile-sept2022.csv", encoding="utf-8-sig")
+prof = pd.read_excel(BASE + r"\data\unit-profile-sept2022.xlsx")  # needs openpyxl
 prof = prof.rename(columns={"Unit ID": "unit_id"})
 prof["group"] = prof["timezone_offset_dst"].map({-4: "Eastern", -7: "Pacific"})
 grp = prof.dropna(subset=["group"])[["unit_id", "group", "Technology"]]

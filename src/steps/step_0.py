@@ -14,13 +14,13 @@ import pandas as pd
 RAW = r"D:\Capstone FTTH\data\raw\validated-data-sept2022"
 REF = r"D:\Capstone FTTH\data\fiber_units.csv"
 
-# Población FTTH (258); utf-8-sig por el BOM del archivo
+# FTTH population (258 units); utf-8-sig because the file starts with a BOM
 units = pd.read_csv(REF, encoding="utf-8-sig").rename(columns={"Unit ID": "unit_id"})
 ids = set(units["unit_id"])
 print("Unidades en fiber_units.csv:", len(ids))
 
 def ftth_chunks(name, cols):
-    # Lee 2M de filas por vez y conserva solo las unidades FTTH
+    # Reads 2M rows at a time and keeps only the FTTH units
     for ch in pd.read_csv(rf"{RAW}\{name}.csv", usecols=cols,
                           parse_dates=["dtime"], chunksize=2_000_000):
         yield ch[ch["unit_id"].isin(ids)]
@@ -39,9 +39,9 @@ for name, cols in [
     print("Targets distintos:\n", df["target"].value_counts().head(10))
     print("Filas por unidad:\n", df.groupby("unit_id").size().describe())
     if name == "curr_udplatency":
-        latency = df  # se conserva para el check de zona horaria
+        latency = df  # kept for the time zone check
 
-# Check 4: rtt_avg medio (ms) por hora, con UTC, offset estándar y offset DST (solo septiembre)
+# Check 4: mean rtt_avg (ms) by hour under UTC, standard offset and DST offset (September only)
 lat = latency.merge(units[["unit_id", "timezone_offset", "timezone_offset_dst"]], on="unit_id")
 lat = lat[lat["dtime"].dt.month == 9]
 lat["h_utc"] = lat["dtime"].dt.hour

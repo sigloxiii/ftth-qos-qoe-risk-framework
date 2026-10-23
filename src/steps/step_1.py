@@ -17,14 +17,14 @@ import pandas as pd
 BASE = r"D:\Capstone FTTH"
 RAW = BASE + r"\data\raw\validated-data-sept2022"
 INTERIM = BASE + r"\data\interim"
-os.makedirs(INTERIM, exist_ok=True)  # crea la carpeta si no existe
+os.makedirs(INTERIM, exist_ok=True)  # creates the folder if it does not exist
 
 units = pd.read_csv(BASE + r"\data\fiber_units.csv", encoding="utf-8-sig")
 units = units.rename(columns={"Unit ID": "unit_id"})
-ids = set(units["unit_id"])  # las 258 unidades FTTH
+ids = set(units["unit_id"])  # the 258 FTTH units
 
-# --- Etapa 1: CSV crudo -> CSV filtrado a las 258 unidades FTTH ---
-# Se lee por bloques (chunks) de 2M de filas: los archivos son muy grandes para cargarlos de una vez
+# --- Stage 1: raw CSV -> CSV filtered to the 258 FTTH units ---
+# Read in chunks of 2M rows: the files are too large to load at once
 SPECS = {
     "udplatency": ["unit_id", "dtime", "target", "rtt_avg", "rtt_min", "successes", "failures"],
     "udpjitter":  ["unit_id", "dtime", "target", "jitter_up", "jitter_down"],
@@ -33,39 +33,39 @@ SPECS = {
 for name, cols in SPECS.items():
     out = INTERIM + rf"\{name}_ftth.csv"
     if os.path.exists(out):
-        continue  # ya generado: evita repetir la lectura larga
+        continue  # already created: avoids repeating the long read
     parts = []
     for chunk in pd.read_csv(RAW + rf"\curr_{name}.csv", usecols=cols,
                              parse_dates=["dtime"], chunksize=2_000_000):
-        parts.append(chunk[chunk["unit_id"].isin(ids)])  # conserva solo unidades FTTH
+        parts.append(chunk[chunk["unit_id"].isin(ids)])  # keeps only FTTH units
     pd.concat(parts).to_csv(out, index=False)
 
-# --- Etapa 2: análisis sobre latencia ---
+# --- Stage 2: latency analysis ---
 lat = pd.read_csv(INTERIM + r"\udplatency_ftth.csv", parse_dates=["dtime"])
 lat = lat.merge(units[["unit_id", "State", "timezone_offset_dst"]], on="unit_id")
 
 lat["h_utc"] = lat["dtime"].dt.hour
-# Hora local = UTC + offset en horas (DST aplica a todo el periodo)
+# Local hour = UTC + offset in hours (DST applies to the whole period)
 lat["h_dst"] = (lat["dtime"] + pd.to_timedelta(lat["timezone_offset_dst"], unit="h")).dt.hour
 
-# A) Pruebas por hora: ¿hay valle en la tarde-noche local con alguna convención?
+# A) Tests per hour: is there a trough in the local evening under either convention?
 print(pd.DataFrame({"utc": lat["h_utc"].value_counts().sort_index(),
                     "dst": lat["h_dst"].value_counts().sort_index()}))
 
-# B) Servidores por unidad y RTT mediano por estado (posible sesgo geográfico)
+# B) Servers per unit and median RTT by state (possible geographic bias)
 print("\nTargets por unidad:\n", lat.groupby("unit_id")["target"].nunique().value_counts().sort_index())
 unit_med = lat.groupby(["unit_id", "State"])["rtt_avg"].median().div(1000).reset_index(name="rtt_med_ms")
 print("\nRTT mediano por unidad (ms):\n", unit_med["rtt_med_ms"].describe().round(1))
 print(unit_med.groupby("State")["rtt_med_ms"].agg(["count", "median", "max"]).round(1))
 
-# C) Registros en ventana pico [19, 23) por unidad: base para definir N_MIN
+# C) Records in the peak window [19, 23) per unit: basis for defining N_MIN
 peak = lat[(lat["h_dst"] >= 19) & (lat["h_dst"] < 23)]
-# reindex: las unidades sin registros pico cuentan 0 (es un conteo real, no una métrica inventada)
+# reindex: units without peak records count 0 (a real count, not an invented metric)
 n_peak = peak.groupby("unit_id").size().reindex(units["unit_id"], fill_value=0)
 print("\nn_peak (periodo completo):\n", n_peak.describe().round(1))
 print("Unidades con n_peak < 30 / 50 / 100:", [int((n_peak < k).sum()) for k in (30, 50, 100)])
 
-# D) Mismo conteo solo con septiembre, para respaldar la decisión de rango de fechas
+# D) Same count with September only, to support the date range decision
 n_sep = peak[peak["dtime"].dt.month == 9].groupby("unit_id").size()
 n_sep = n_sep.reindex(units["unit_id"], fill_value=0)
 print("\nn_peak (solo septiembre):\n", n_sep.describe().round(1))

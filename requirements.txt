@@ -5,3 +5,4 @@ pandas>=2.2.0,<3.0       # data processing and QoE metrics calculation (P95, agg
 numpy>=1.26.0,<2.2       # numerical operations and percentile support
 pyyaml>=6.0.1            # configuration file parsing (config.yaml)
 pytest>=8.0              # automated testing (tests/)
+openpyxl>=3.1.2          # reads the Excel unit profile (step_7.py, step_8.py)

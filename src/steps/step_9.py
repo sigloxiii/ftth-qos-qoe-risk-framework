@@ -31,12 +31,12 @@ import pandas as pd
 BASE = r"D:\Capstone FTTH"
 INTERIM = BASE + r"\data\interim"
 
-# Parámetros (espejo de config.yaml); el pipeline los leerá desde allí
+# Parameters (mirror of config.yaml); pipeline.py reads them from there
 START, END = "2022-09-12", "2022-10-31"
-PEAK_START, PEAK_END = 19, 23            # hora local, [19, 23)
+PEAK_START, PEAK_END = 19, 23            # local hour, [19, 23)
 N_MIN = 50
-T_LAT, T_JIT, T_LOSS = 20, 5, 1.0        # umbrales base
-S_LAT, S_JIT, S_LOSS = 50, 15, 10        # umbrales severos
+T_LAT, T_JIT, T_LOSS = 20, 5, 1.0        # base thresholds
+S_LAT, S_JIT, S_LOSS = 50, 15, 10        # severe thresholds
 KEY = ["unit_id", "dtime", "target"]
 
 units = pd.read_csv(BASE + r"\data\fiber_units.csv", encoding="utf-8-sig")
@@ -47,18 +47,18 @@ ids = units["unit_id"]
 lat = pd.read_csv(INTERIM + r"\udplatency_ftth.csv", parse_dates=["dtime"])
 jit = pd.read_csv(INTERIM + r"\udpjitter_ftth.csv", parse_dates=["dtime"])
 
-# --- Calidad de datos: periodo, duplicados e inválidos (se excluyen y se cuentan) ---
+# --- Data quality: period, duplicates and invalid records (excluded and counted) ---
 def prep(df, name, invalid):
     n0 = len(df)
-    d = df["dtime"].dt.normalize()  # falla si dtime no se pudo interpretar como fecha
+    d = df["dtime"].dt.normalize()  # fails if dtime could not be parsed as a date
     df = df[(d >= START) & (d <= END)]
     n_period = n0 - len(df)
     n1 = len(df)
-    df = df.drop_duplicates()                      # copias exactas: se conserva una
+    df = df.drop_duplicates()                      # exact copies: keep one
     n_exact = n1 - len(df)
-    conflict = df.duplicated(KEY, keep=False)      # clave repetida con valores distintos
+    conflict = df.duplicated(KEY, keep=False)      # repeated key with different values
     n_conflict = int(conflict.sum())
-    df = df[~conflict]                             # en conflicto: se descartan todas
+    df = df[~conflict]                             # conflicting: drop all
     bad = invalid(df)
     n_bad = int(bad.sum())
     df = df[~bad]
@@ -75,12 +75,12 @@ lat["rtt_ms"] = lat["rtt_avg"] / 1000
 lat["total"] = lat["successes"] + lat["failures"]
 jit["jitter_ms"] = (jit["jitter_up"] + jit["jitter_down"]) / 2 / 1000
 
-# --- Reglas ---
+# --- Rules ---
 def hour_local(df):
-    return df["dtime"].dt.hour  # D-03: dtime ya es hora local
+    return df["dtime"].dt.hour  # D-03: dtime is already local time
 
 def hour_utc(df):
-    # Lectura UTC (sensibilidad): hora local = dtime + timezone_offset_dst
+    # UTC reading (sensitivity): local hour = dtime + timezone_offset_dst
     return (df["dtime"] + pd.to_timedelta(df["timezone_offset_dst"], unit="h")).dt.hour
 
 def peak(df, hour_fn):
@@ -88,14 +88,14 @@ def peak(df, hour_fn):
     return df[(h >= PEAK_START) & (h < PEAK_END)]
 
 def primary_targets(df):
-    # Servidor con más registros pico por unidad; desempate alfabético (reproducible)
+    # Server with the most peak records per unit; alphabetical tie-break (reproducible)
     cnt = df.groupby(["unit_id", "target"]).size().reset_index(name="n")
     cnt = cnt.sort_values(["unit_id", "n", "target"], ascending=[True, False, True])
     return cnt.drop_duplicates("unit_id")[["unit_id", "target"]]
 
 def run(hour_fn, mode, jitter_server="latency", n_min=N_MIN, jit_min=0):
-    # jitter_server: "latency" = base (un servidor por unidad); "own" = primario del archivo de jitter
-    # jit_min: mínimo de registros de jitter para evaluar jitter (0 = sin mínimo)
+    # jitter_server: "latency" = base case (one server per unit); "own" = primary server of the jitter file
+    # jit_min: minimum jitter records to evaluate jitter (0 = no minimum)
     l, j = peak(lat, hour_fn), peak(jit, hour_fn)
     if mode == "primary_only":
         main_l = primary_targets(l)
@@ -106,14 +106,14 @@ def run(hour_fn, mode, jitter_server="latency", n_min=N_MIN, jit_min=0):
     out = pd.DataFrame({
         "p95_lat": g["rtt_ms"].quantile(0.95),
         "p95_jit": j.groupby("unit_id")["jitter_ms"].quantile(0.95),
-        "loss": g["failures"].sum() / g["total"].sum() * 100,  # razón de sumas
+        "loss": g["failures"].sum() / g["total"].sum() * 100,  # ratio of sums
     }).reindex(ids)
-    # Conteos: una unidad sin registros pico tiene 0 (es un conteo real, no una métrica inventada)
+    # Counts: a unit without peak records has 0 (a real count, not an invented metric)
     out["n_peak"] = g.size().reindex(ids, fill_value=0)
     out["n_peak_jit"] = j.groupby("unit_id").size().reindex(ids, fill_value=0)
-    out["scored"] = out["n_peak"] >= n_min  # D-02: las demás se reportan aparte, no se califican
+    out["scored"] = out["n_peak"] >= n_min  # D-02: the others are reported separately and not scored
     jit_ok = out["n_peak_jit"] >= jit_min
-    # Un NaN no supera ningún umbral: no se rellena con 0
+    # A NaN does not exceed any threshold: it is not filled with 0
     out["flag_lat"] = ((out["p95_lat"] > T_LAT) & out["scored"]).astype(int)
     out["flag_jit"] = ((out["p95_jit"] > T_JIT) & out["scored"] & jit_ok).astype(int)
     out["flag_loss"] = ((out["loss"] > T_LOSS) & out["scored"]).astype(int)
@@ -127,7 +127,7 @@ def line(label, o):
           f"   (latencia {int(o['flag_lat'].sum())}, jitter {int(o['flag_jit'].sum())}, "
           f"pérdida {int(o['flag_loss'].sum())}, severas {int(o['severe'].sum())})")
 
-# --- Matriz 2 x 2 ---
+# --- 2 x 2 matrix ---
 res = {}
 for hname, hfn in [("local", hour_local), ("utc", hour_utc)]:
     for mode in ["primary_only", "all_servers"]:
@@ -147,7 +147,7 @@ print(sc[sc["risk"] == 1][["n_peak", "n_peak_jit", "p95_lat", "p95_jit", "loss",
 print("\nUnidades insuficientes (n_peak < N_MIN), una por línea:")
 print(base.loc[~base["scored"], "n_peak"].rename("n_peak").to_string())
 
-# Unidades que cambian de estado entre lectura local y UTC (ambas con primary_only)
+# Units that change status between the local and UTC readings (both with primary_only)
 utc_p = res[("utc", "primary_only")]
 chg = base.index[(base["risk"] != utc_p["risk"]) | (base["scored"] != utc_p["scored"])]
 print(f"\nUnidades que cambian de estado entre local y UTC (risk o calificación): {len(chg)}")
@@ -155,7 +155,7 @@ print(pd.concat([base.loc[chg, ["n_peak", "p95_lat", "p95_jit", "loss", "risk"]]
                  utc_p.loc[chg, ["n_peak", "p95_lat", "p95_jit", "loss", "risk"]]],
                 axis=1, keys=["local", "utc"]).round(2))
 
-# --- Diagnósticos ---
+# --- Diagnostics ---
 print("\n=== 1. successes + failures por fila (periodo completo, latencia) ===")
 print(lat["total"].describe().round(1))
 print(lat["total"].quantile([0.01, 0.05, 0.5, 0.95, 0.99]).round(0).to_string())

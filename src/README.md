@@ -69,9 +69,9 @@ Decisions and their evidence: [`docs/decisions.md`](../docs/decisions.md). Overv
 
 ### Running the steps
 
-- Scripts use pandas only and read absolute Windows paths: `BASE` / `RAW` / `INTERIM` point to `D:\Capstone FTTH\...`. Edit them to run on another machine.
+- Scripts use pandas (and `openpyxl` in steps 7 and 8) and read absolute Windows paths: `BASE` / `RAW` / `INTERIM` point to `D:\Capstone FTTH\...`. Edit them to run on another machine.
 - `step_1.py` creates `data/interim/udplatency_ftth.csv`, `udpjitter_ftth.csv` and `udpcloss_ftth.csv` (gitignored); steps 2 to 6 and 9 to 11 read them. Steps 0, 7 and 8 read the raw files directly. `step_11_1.py` reads the cache that `pipeline.py` creates.
-- `step_7.py` and `step_8.py` read `data/unit-profile-sept2022.csv`; the repository versions the `.xlsx` of the same profile. Export the sheet to CSV (UTF-8) before running them.
+- `step_7.py` and `step_8.py` read the unit profile `data/unit-profile-sept2022.xlsx` (requires `openpyxl`).
 - Raw FCC files (6.8 GB) are not in the repository.
 
 ## Rules for the pipeline

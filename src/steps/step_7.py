@@ -9,7 +9,7 @@
 #            Uses all units of the unit profile (any technology) with timezone_offset_dst of
 #            -4 (Eastern) or -7 (Pacific) and compares the two hourly RTT profiles shifted by
 #            0 to 6 hours.
-# Inputs:    data/unit-profile-sept2022.csv
+# Inputs:    data/unit-profile-sept2022.xlsx
 #            data/raw/validated-data-sept2022/curr_udplatency.csv
 # Outputs:   Console only (results are documented in docs/data_inspection.md)
 
@@ -19,7 +19,7 @@ BASE = r"D:\Capstone FTTH"
 RAW = BASE + r"\data\raw\validated-data-sept2022"
 
 # Grupos por zona horaria en horario de verano: -4 = Este, -7 = Pacífico (cualquier tecnología)
-prof = pd.read_csv(BASE + r"\data\unit-profile-sept2022.csv", encoding="utf-8-sig")
+prof = pd.read_excel(BASE + r"\data\unit-profile-sept2022.xlsx")  # needs openpyxl
 prof = prof.rename(columns={"Unit ID": "unit_id"})
 prof["group"] = prof["timezone_offset_dst"].map({-4: "Eastern", -7: "Pacific"})
 grp = prof.dropna(subset=["group"])[["unit_id", "group"]]

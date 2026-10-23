@@ -15,7 +15,7 @@ import pandas as pd
 BASE = r"D:\Capstone FTTH"
 INTERIM = BASE + r"\data\interim"
 
-# Umbrales base de la spec
+# Base thresholds of the spec
 T_LAT, T_JIT, T_LOSS = 20, 5, 1.0
 
 units = pd.read_csv(BASE + r"\data\fiber_units.csv", encoding="utf-8-sig")
@@ -25,19 +25,19 @@ off = units[["unit_id", "timezone_offset_dst"]]
 lat = pd.read_csv(INTERIM + r"\udplatency_ftth.csv", parse_dates=["dtime"]).merge(off, on="unit_id")
 jit = pd.read_csv(INTERIM + r"\udpjitter_ftth.csv", parse_dates=["dtime"]).merge(off, on="unit_id")
 
-# Valores por registro: µs -> ms; jitter = promedio de subida y bajada
+# Values per record: µs -> ms; jitter = average of upstream and downstream
 lat["rtt_ms"] = lat["rtt_avg"] / 1000
 lat["total"] = lat["successes"] + lat["failures"]
-lat = lat[lat["total"] > 0]  # registros inválidos se excluyen, no se corrigen (spec, sección 5)
+lat = lat[lat["total"] > 0]  # invalid records are excluded, not corrected (spec, section 5)
 jit["jitter_ms"] = (jit["jitter_up"] + jit["jitter_down"]) / 2 / 1000
 
-# Hora según cada convención
+# Hour under each convention
 for df in (lat, jit):
     df["h_spec"] = (df["dtime"] + pd.to_timedelta(df["timezone_offset_dst"], unit="h")).dt.hour
-    df["h_alt"] = df["dtime"].dt.hour  # dtime tomado como hora local
+    df["h_alt"] = df["dtime"].dt.hour  # dtime taken as local time
 
 def metrics(hour_col):
-    # Función para no repetir el mismo cálculo tres veces; hour_col=None usa todas las horas
+    # Function to avoid repeating the same calculation three times; hour_col=None uses all hours
     l, j = lat, jit
     if hour_col:
         l = lat[(lat[hour_col] >= 19) & (lat[hour_col] < 23)]
@@ -46,9 +46,9 @@ def metrics(hour_col):
     out = pd.DataFrame({
         "p95_lat": g["rtt_ms"].quantile(0.95),
         "p95_jit": j.groupby("unit_id")["jitter_ms"].quantile(0.95),
-        "loss": g["failures"].sum() / g["total"].sum() * 100,  # razón de sumas
-    }).reindex(units["unit_id"])  # mismas 258 unidades en las tres variantes
-    # Un NaN no supera ningún umbral: la unidad sin datos no se marca (ni se rellena con 0)
+        "loss": g["failures"].sum() / g["total"].sum() * 100,  # ratio of sums
+    }).reindex(units["unit_id"])  # same 258 units in the three variants
+    # A NaN does not exceed any threshold: a unit without data is not flagged (nor filled with 0)
     out["risk"] = ((out["p95_lat"] > T_LAT) | (out["p95_jit"] > T_JIT) | (out["loss"] > T_LOSS)).astype(int)
     return out
 
