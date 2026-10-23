@@ -14,9 +14,9 @@ KEY = ["unit_id", "dtime", "target"]
 
 for name in ["udplatency", "udpjitter"]:
     df = pd.read_csv(INTERIM + rf"\{name}_ftth.csv", parse_dates=["dtime"])
-    # keep=False marca todas las filas involucradas, no solo la segunda copia
+    # keep=False marks every row involved, not just the second copy
     dup = df[df.duplicated(KEY, keep=False)].sort_values(KEY)
-    exact = df.duplicated(keep=False).sum()  # filas con TODAS las columnas iguales a otra
+    exact = df.duplicated(keep=False).sum()  # rows with ALL columns equal to another row
     print(f"\n=== {name} ===")
     print("Filas con clave duplicada:", len(dup),
           "| de ellas, copias exactas:", int(exact))

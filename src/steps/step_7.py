@@ -18,18 +18,18 @@ import pandas as pd
 BASE = r"D:\Capstone FTTH"
 RAW = BASE + r"\data\raw\validated-data-sept2022"
 
-# Grupos por zona horaria en horario de verano: -4 = Este, -7 = Pacífico (cualquier tecnología)
+# Groups by time zone during daylight saving time: -4 = Eastern, -7 = Pacific (any technology)
 prof = pd.read_excel(BASE + r"\data\unit-profile-sept2022.xlsx")  # needs openpyxl
 prof = prof.rename(columns={"Unit ID": "unit_id"})
 prof["group"] = prof["timezone_offset_dst"].map({-4: "Eastern", -7: "Pacific"})
 grp = prof.dropna(subset=["group"])[["unit_id", "group"]]
 print("Unidades por grupo:\n", grp["group"].value_counts())
 
-# Lectura por bloques: suma y conteo de rtt_avg por grupo y hora de dtime
+# Chunked read: sum and count of rtt_avg by group and dtime hour
 parts = []
 for chunk in pd.read_csv(RAW + r"\curr_udplatency.csv", usecols=["unit_id", "dtime", "rtt_avg"],
                          parse_dates=["dtime"], chunksize=2_000_000):
-    chunk = chunk.merge(grp, on="unit_id")  # solo unidades del Este y del Pacífico
+    chunk = chunk.merge(grp, on="unit_id")  # only Eastern and Pacific units
     chunk["hour"] = chunk["dtime"].dt.hour
     parts.append(chunk.groupby(["group", "hour"])["rtt_avg"].agg(["sum", "count"]))
 tot = pd.concat(parts).groupby(level=[0, 1]).sum()
@@ -42,7 +42,7 @@ print("\nAmplitud relativa (máx - mín) / media: Este",
       round((east.max() - east.min()) / east.mean() * 100, 1), "% | Pacífico",
       round((pac.max() - pac.min()) / pac.mean() * 100, 1), "%")
 
-# Correlación entre el perfil del Este y el del Pacífico desplazado k horas
+# Correlation between the Eastern profile and the Pacific profile shifted by k hours
 print("\nCorrelación Este vs Pacífico desplazado k horas (k = 3: dtime es UTC; k = 0: dtime es local):")
 for k in range(7):
     shifted = pd.Series([pac[(h + k) % 24] for h in range(24)], index=range(24))

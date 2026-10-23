@@ -20,12 +20,12 @@ prof = prof.rename(columns={"Unit ID": "unit_id"})
 prof["group"] = prof["timezone_offset_dst"].map({-4: "Eastern", -7: "Pacific"})
 grp = prof.dropna(subset=["group"])[["unit_id", "group", "Technology"]]
 
-# Unidades por tecnología y región; solo se comparan tecnologías con >= 30 unidades en ambas
+# Units by technology and region; only technologies with >= 30 units in both regions are compared
 counts = grp.groupby(["Technology", "group"]).size().unstack(fill_value=0)
 print("Unidades por tecnología y región:\n", counts)
 techs = counts[(counts["Eastern"] >= 30) & (counts["Pacific"] >= 30)].index
 
-# Lectura por bloques: suma y conteo de rtt_avg por tecnología, región y hora de dtime
+# Chunked read: sum and count of rtt_avg by technology, region and dtime hour
 parts = []
 for chunk in pd.read_csv(RAW + r"\curr_udplatency.csv", usecols=["unit_id", "dtime", "rtt_avg"],
                          parse_dates=["dtime"], chunksize=2_000_000):
@@ -36,7 +36,7 @@ tot = pd.concat(parts).groupby(level=[0, 1, 2]).sum()
 tot["mean_ms"] = tot["sum"] / tot["count"] / 1000  # µs -> ms
 
 for tech in techs:
-    # reindex(range(24)) garantiza las 24 horas aunque falte alguna
+    # reindex(range(24)) guarantees all 24 hours even if one is missing
     east = tot.loc[(tech, "Eastern"), "mean_ms"].reindex(range(24))
     pac = tot.loc[(tech, "Pacific"), "mean_ms"].reindex(range(24))
     print(f"\n=== {tech} ===")
