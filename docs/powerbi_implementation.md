@@ -1185,7 +1185,7 @@ All DAX queries are below 25 ms, so no optimization was needed: the model is sma
 ### 12.2 Model hygiene and refresh
 
 - Seven tables are **hidden in report view**: `aud_dq`, `aud_dq_jit`, `aud_unit_metrics`, `rec_insufficient`, `rec_summary`, `rec_units` and `fiber_units`. They support the audit and the reconciliation, not the report. Hiding is interface tidiness, not security (section 12.5).
-- **Refresh.** A full refresh takes about 4-5 minutes because the `aud_*` and `rec_*` queries read the interim CSV files (about 4 GB). The audit queries stay in the refresh on purpose: the cost is acceptable, and the audit remains reproducible. The `.pbix` is only 295 KB, so it is committed directly (no Git LFS).
+- **Refresh.** A full refresh takes about 4-5 minutes because the `aud_*` and `rec_*` queries recompute the metrics from the interim CSV files (69 MB, six files); the time comes from the per-unit calculations (percentiles, duplicates, reconciliation), not from the data volume. The audit queries stay in the refresh on purpose: the cost is acceptable, and the audit remains reproducible. The `.pbix` is only 295 KB, so it is committed directly (no Git LFS). `data/interim/` is not versioned: it is derived (`step_1.py` regenerates it from the RAW files) and every new version would add its 69 MB to the history.
 - **Refresh prerequisites** (for anyone reproducing the report): obtain the RAW files listed in the repository, run `python src/steps/step_1.py` to create `data/interim/`, set the Power Query parameter `RepoPath` to the local repository folder, then refresh.
 
 ### 12.3 Export
