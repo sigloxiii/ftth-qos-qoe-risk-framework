@@ -3,10 +3,10 @@
 Living document. It records what was built in Power BI, the reason behind each step, and how each step was verified. Updated after every working session.
 
 - **Tool:** Power BI Desktop 2.157.1354.0 (64-bit)
-- **Project file:** `powerbi/ftth_qoe.pbix`
+- **Project file:** `powerbi/ftth_qoe.pbix` (report export: `powerbi/ftth_qoe_report.pdf`)
 - **Last updated:** 2026-10-22
-- **Status:** Sessions 1-3 complete (load, model, base measures). Sessions 4A-6 complete (the full audit table is built: cleaning, peak window, primary server, P95 latency/jitter, loss, flags, severity and D-10 columns). Session 7 complete (per-unit reconciliation of the 237 analyzed units and the 21 insufficient units: 0 mismatches; result in `docs/reconciliation.md`). Session 8 (report): pages 1-6 built (section 11); final review and session 9 pending.
-- **Images:** `docs/img/powerbi/` (`01_unit_metrics_load.png`, `02_unit_metrics_null_jitter.png`, `03_model_view_flat.png`, `04_hierarchy_matrix.png`, `05_measures_check.png`, `06_audit_data_quality_check.png`, `07_audit_core_totals.png`, `08_audit_core_control_units.png`, `09_audit_jitter_dq_check.png`, `10_audit_jitter_conflicts.png`, `11_audit_units_totals.png`, `12_audit_units_jitter_controls.png`, `13_audit_unit_metrics_totals.png`, `14_audit_unit_metrics_d10_controls.png`, `15_reconciliation_totals.png`, `16_reconciliation_summary.png`, `17_reconciliation_insufficient.png`, `18_report_overview.png`, `19_report_latency.png`, `20_report_at_risk_units.png`, `21_report_jitter_loss.png`, `22_report_sensitivity.png`, `23_report_data_quality_method.png`; numbered in order of appearance, matching Figures 1-23)
+- **Status:** Sessions 1-3 complete (load, model, base measures). Sessions 4A-6 complete (the full audit table is built: cleaning, peak window, primary server, P95 latency/jitter, loss, flags, severity and D-10 columns). Session 7 complete (per-unit reconciliation of the 237 analyzed units and the 21 insufficient units: 0 mismatches; result in `docs/reconciliation.md`). Session 8 (report) complete: pages 1-6 built and reviewed (section 11). Session 9 complete (section 12): performance checked, model hygiene, PDF export, row-level security tested in Desktop; publishing to Power BI Service not possible with a personal account.
+- **Images:** `docs/img/powerbi/` (`01_unit_metrics_load.png`, `02_unit_metrics_null_jitter.png`, `03_model_view_flat.png`, `04_hierarchy_matrix.png`, `05_measures_check.png`, `06_audit_data_quality_check.png`, `07_audit_core_totals.png`, `08_audit_core_control_units.png`, `09_audit_jitter_dq_check.png`, `10_audit_jitter_conflicts.png`, `11_audit_units_totals.png`, `12_audit_units_jitter_controls.png`, `13_audit_unit_metrics_totals.png`, `14_audit_unit_metrics_d10_controls.png`, `15_reconciliation_totals.png`, `16_reconciliation_summary.png`, `17_reconciliation_insufficient.png`, `18_report_overview.png`, `19_report_latency.png`, `20_report_at_risk_units.png`, `21_report_jitter_loss.png`, `22_report_sensitivity.png`, `23_report_data_quality_method.png`, `24_performance_analyzer.png`, `25_rls_view_as_verizon_p1.png`, `26_rls_view_as_verizon_p6.png`, `27_rls_static_text_leak.png`; numbered in order of appearance, matching Figures 1-27)
 
 ## 1. Role of Power BI in this project
 
@@ -1164,7 +1164,85 @@ Headline Method =
 - Keep headlines under about 50 characters at 28 pt in a 760 px card; longer text is cut with an ellipsis.
 - Screenshots: use **Win+Shift+S**. Alt+PrtScn activates the KeyTips and they appear in the image.
 
-## 12. Modelling notes
+## 12. Session 9 - Performance, model hygiene, export and security (Manage and secure)
+
+### 12.1 Performance
+
+Measured with **View > Performance analyzer** (Start recording, Refresh visuals). The duration of a visual is the sum of *DAX query*, *Visual display* and *Other* (waiting for other visuals), so the DAX query is the value that reflects the model.
+
+| Visual | DAX query | Visual display | Other |
+| :--- | :-: | :-: | :-: |
+| Page 1 matrix (ISP and state) | 15 ms | 253 ms | 180 ms |
+| Page 1 cards | 17 ms | - | - |
+| Page 3 table | 24 ms | 246 ms | 288 ms |
+
+All DAX queries are below 25 ms, so no optimization was needed: the model is small (237 + 21 units), flat, and the measures are simple aggregations.
+
+![Performance Analyzer results on the report pages](img/powerbi/24_performance_analyzer.png)
+
+*Figure 24. Performance Analyzer: DAX queries under 25 ms.*
+
+### 12.2 Model hygiene and refresh
+
+- Seven tables are **hidden in report view**: `aud_dq`, `aud_dq_jit`, `aud_unit_metrics`, `rec_insufficient`, `rec_summary`, `rec_units` and `fiber_units`. They support the audit and the reconciliation, not the report. Hiding is interface tidiness, not security (section 12.5).
+- **Refresh.** A full refresh takes about 4-5 minutes because the `aud_*` and `rec_*` queries read the interim CSV files (about 4 GB). The audit queries stay in the refresh on purpose: the cost is acceptable, and the audit remains reproducible. The `.pbix` is only 295 KB, so it is committed directly (no Git LFS).
+- **Refresh prerequisites** (for anyone reproducing the report): obtain the RAW files listed in the repository, run `python src/steps/step_1.py` to create `data/interim/`, set the Power Query parameter `RepoPath` to the local repository folder, then refresh.
+
+### 12.3 Export
+
+The report is exported with **File > Export > Export to PDF** (no ISP selected) to `powerbi/ftth_qoe_report.pdf`: six pages, 16:9. Two visuals were clipped by their internal scroll in the first export (the page 1 matrix lost most of Frontier's states; the page 6 cleaning log lost its last rows). They were fixed by reducing row padding and font size and increasing the visual height; the second export shows all 20 matrix rows and all 18 log rows.
+
+### 12.4 Publishing
+
+Publishing to **Power BI Service** was not possible: Power BI requires a work or school account and the account used here is a personal one, so sign-in is rejected. The deliverables are the `.pbix` and the PDF in the repository. Service-only features (workspaces, scheduled refresh, assigning users to roles, apps) were therefore not exercised.
+
+### 12.5 Row-level security (RLS)
+
+**Purpose.** RLS restricts the rows a user can see in the same report. A role is a DAX filter on one table; the filter propagates through relationships and cannot be removed from the report, unlike a slicer. Users are assigned to roles in Power BI Service; in Desktop a role is tested with **Modeling > View as**.
+
+**Role.** `ISP_Verizon` (Modeling > Manage roles), table `unit_metrics`, filter:
+
+```dax
+[isp] = "Verizon"
+```
+
+Static RLS (one role per value). Dynamic RLS (`USERPRINCIPALNAME()` and a user-to-ISP table) would scale better but needs the Service to be tested.
+
+**Result with View as `ISP_Verizon`:**
+
+| Page | Visual | Value under the role | Check |
+| :-: | :--- | :-: | :-- |
+| 1 | Analyzed / At Risk | 68 / 2 (2.9 %) | Verizon: 68 analyzed, 2 at risk |
+| 1 | Units in Scope | 76 | 68 analyzed + 8 insufficient (Verizon) |
+| 4 | Units without measurable jitter | 17 | 17 of 68 (25.0 %) |
+| 4 | Loss Flags | 0 | The Frontier unit above 1 % is excluded |
+| 6 | Headline | 76 in scope, 68 analyzed, 8 set aside | Matches |
+| 1-6 | ISP slicer | Only "Verizon" | - |
+
+`units_insufficient` needs no filter of its own: the `TREATAS` on `isp` and `state` reads the values already filtered in `unit_metrics`, so Verizon shows 8 insufficient units, not 21.
+
+![Page 1 under View as ISP_Verizon](img/powerbi/25_rls_view_as_verizon_p1.png)
+
+*Figure 25. Page 1 under the role `ISP_Verizon`: 68 analyzed, 2 at risk, 76 in scope.*
+
+![Page 6 under View as ISP_Verizon](img/powerbi/26_rls_view_as_verizon_p6.png)
+
+*Figure 26. Page 6 under the role `ISP_Verizon`: 76 in scope, 68 analyzed, 8 set aside.*
+
+**Limits of this implementation (what RLS does not cover here):**
+
+1. **Disconnected tables are not filtered.** `variants_matrix`, `sensitivity_grid` and `data_quality_log` have no relationship with `unit_metrics`. Page 5 shows the same values with and without the role (5 at risk; 21 with all servers), which are population-wide results, not Verizon results. The cleaning log on page 6 is global by design ("all ISPs").
+2. **Static text boxes are not filtered.** The text on pages 4 and 6 names a Frontier unit (24840041, 1.66 % loss), Cincinnati Bell counts and population-wide figures (237 analyzed, 144 evaluated for jitter). A restricted user would still read them.
+3. **Hidden tables are not secured.** `aud_*`, `rec_*` and `fiber_units` have no role filter and remain queryable (for example with Analyze in Excel) by anyone with build permission.
+4. **Scope of RLS.** It applies to users with the Viewer role in the Service. Users who can edit the dataset see all data. Hiding columns or tables from a role is object-level security, a different mechanism.
+
+For a production report these would be closed with dynamic text measures, role filters on the audit tables (or removing them from the published model) and a filtered scenario table. They are documented, not fixed, because this project delivers a single report file.
+
+![Page 4 under View as ISP_Verizon: static text still names a Frontier unit](img/powerbi/27_rls_static_text_leak.png)
+
+*Figure 27. Page 4 under the role `ISP_Verizon`: the static text still names a Frontier unit.*
+
+## 13. Modelling notes
 
 - **Flat by design.** `unit_metrics` is the single fact table (237 analyzed units). ISP, state and Whitebox model are text columns in the same table.
 - **Population denominator.** The 258-unit population is computed with a measure (analyzed + `units_insufficient`), not through a relationship.
@@ -1173,7 +1251,7 @@ Headline Method =
 - **Slicer limitation.** `units_insufficient` is reached only through `TREATAS` on `isp` and `state`. A slicer on any other `unit_metrics` column (Whitebox model, census, speed tiers) filters analyzed units but not insufficient ones, so `Insufficient Units` and `Population Units` ignore it. Population by ISP and state is exact; other cuts need a dimension table.
 - **Trade-off.** A star schema would enable cross-filtering and reuse; out of scope here.
 
-## 13. Roadmap
+## 14. Roadmap
 
 | Session | Content | PL-300 domain |
 | :-: | :--- | :--- |
@@ -1184,5 +1262,5 @@ Headline Method =
 | 6 | Audit phase 3: `risk_flag`, `risk_severe` and D-10 columns - **done** | Prepare the data |
 | 7A | Per-`Unit ID` reconciliation of the 237 analyzed units - **done** | Analyze the data |
 | 7B | Reconciliation of the 21 insufficient units; result in `docs/reconciliation.md` - **done** | Analyze the data |
-| 8 | Report pages and narrative: pages 1-6 **done**; final review pending | Visualize and analyze |
-| 9 | Performance, documentation, publishing | Manage and secure |
+| 8 | Report pages and narrative: pages 1-6 **done** | Visualize and analyze |
+| 9 | Performance, model hygiene, PDF export, row-level security **done**; publishing **not possible** (personal account) | Manage and secure |
