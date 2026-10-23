@@ -5,8 +5,8 @@ Living document. It records what was built in Power BI, the reason behind each s
 - **Tool:** Power BI Desktop 2.157.1354.0 (64-bit)
 - **Project file:** `powerbi/ftth_qoe.pbix`
 - **Last updated:** 2026-10-22
-- **Status:** Sessions 1-3 complete (load, model, base measures). Sessions 4A-6 complete (the full audit table is built: cleaning, peak window, primary server, P95 latency/jitter, loss, flags, severity and D-10 columns). Session 7 complete (per-unit reconciliation of the 237 analyzed units and the 21 insufficient units: 0 mismatches; result in `docs/reconciliation.md`). Session 8 (report) in progress: pages 1-3 built (section 11); pages 4-6 and session 9 pending.
-- **Images:** `docs/img/powerbi/` (`01_unit_metrics_load.png`, `02_unit_metrics_null_jitter.png`, `03_model_view_flat.png`, `04_hierarchy_matrix.png`, `05_measures_check.png`, `06_audit_data_quality_check.png`, `07_audit_core_totals.png`, `08_audit_core_control_units.png`, `09_audit_jitter_dq_check.png`, `10_audit_jitter_conflicts.png`, `11_audit_units_totals.png`, `12_audit_units_jitter_controls.png`, `13_audit_unit_metrics_totals.png`, `14_audit_unit_metrics_d10_controls.png`, `15_reconciliation_totals.png`, `16_reconciliation_summary.png`, `17_reconciliation_insufficient.png`, `18_report_overview.png`, `19_report_latency.png`, `20_report_at_risk_units.png`; numbered in order of appearance, matching Figures 1-20)
+- **Status:** Sessions 1-3 complete (load, model, base measures). Sessions 4A-6 complete (the full audit table is built: cleaning, peak window, primary server, P95 latency/jitter, loss, flags, severity and D-10 columns). Session 7 complete (per-unit reconciliation of the 237 analyzed units and the 21 insufficient units: 0 mismatches; result in `docs/reconciliation.md`). Session 8 (report): pages 1-6 built (section 11); final review and session 9 pending.
+- **Images:** `docs/img/powerbi/` (`01_unit_metrics_load.png`, `02_unit_metrics_null_jitter.png`, `03_model_view_flat.png`, `04_hierarchy_matrix.png`, `05_measures_check.png`, `06_audit_data_quality_check.png`, `07_audit_core_totals.png`, `08_audit_core_control_units.png`, `09_audit_jitter_dq_check.png`, `10_audit_jitter_conflicts.png`, `11_audit_units_totals.png`, `12_audit_units_jitter_controls.png`, `13_audit_unit_metrics_totals.png`, `14_audit_unit_metrics_d10_controls.png`, `15_reconciliation_totals.png`, `16_reconciliation_summary.png`, `17_reconciliation_insufficient.png`, `18_report_overview.png`, `19_report_latency.png`, `20_report_at_risk_units.png`, `21_report_jitter_loss.png`, `22_report_sensitivity.png`, `23_report_data_quality_method.png`; numbered in order of appearance, matching Figures 1-23)
 
 ## 1. Role of Power BI in this project
 
@@ -894,7 +894,7 @@ ROW (
 
 ## 11. Session 8 - Report pages and narrative (Visualize and analyze)
 
-**Status:** in progress. Pages 1-3 are built and verified; pages 4-6 are pending.
+**Status:** pages 1-6 are built and verified against the pipeline output; a final review of the report and session 9 are pending.
 
 **Goal.** Turn the verified model into a multi-page report in which each page answers one question and its title states the conclusion. The report only reads `unit_metrics`, `units_insufficient`, `variants_matrix`, `sensitivity_grid` and `data_quality_log`; the audit and reconciliation tables (`aud_*`, `rec_*`) are not used by any visual.
 
@@ -1047,13 +1047,121 @@ SWITCH (
 
 *Figure 20. Page 3 (At-risk units): 5 at risk, 4 persistent and 1 episodic.*
 
-### 11.6 Report-building notes (Power BI Desktop 2.157.1354.0)
+### 11.6 Page 4 - Jitter and loss
+
+**Measures** (`_Measures`):
+
+```dax
+Headline Jitter =
+VAR _j = [Jitter Flags]
+VAR _n = [Analyzed Units]
+RETURN
+    IF (
+        _n = 0,
+        "No analyzed units in the current selection",
+        IF (
+            _j = 0,
+            "No measurable unit exceeds 5 ms P95 jitter",
+            _j & IF ( _j = 1, " unit exceeds", " units exceed" ) & " 5 ms P95 jitter"
+        )
+    )
+
+% Null Jitter = DIVIDE ( [Units Null Jitter], [Analyzed Units] )
+```
+
+**Bins.** `p95_jitter_ms` is grouped in 0.5 ms intervals (New group > Bin). The observed range is 0.25 to 4.48 ms, so the histogram has nine readable intervals and the 5 ms threshold line falls just to the right of the last one. A histogram of `loss_pct` was tried and discarded: loss ranges from 0 to 1.66 % with a median of 0.007 %, so almost every unit falls in the first interval and the one unit above the threshold is invisible. The chart shows the ten highest values instead.
+
+| Visual | Fields | Notes |
+| :--- | :--- | :--- |
+| Stacked column chart | X-axis `p95_jitter_ms (bins)`, Y-axis `Analyzed Units`, Legend `isp` | Visual filter `p95_jitter_ms` is not blank (excludes the 93 units without jitter). Constant line at 5 ms, dashed red, label "Threshold 5 ms". H 24, V 88, W 404, Height 400. |
+| Clustered bar | Y-axis `unit_id` (categorical), X-axis `loss_pct` (Maximum), Legend `isp` | Visual filter Top N: 10 by `loss_pct`. Constant line at 1 %, label "Threshold 1 %". Data labels with 2 decimals. H 444, V 88, W 404, Height 400. |
+| Cards | `Units Null Jitter`, `Jitter Flags`, `Loss Flags` | Titles "Units without measurable jitter", "Jitter flags", "Loss flags"; Loss Flags in red. H 860, V 88 / 200 / 312, W 396, Height 96. |
+| Clustered bar | Y-axis and Legend `isp`, X-axis `% Null Jitter` | Slicer interaction set to None. H 24, V 504, W 824, Height 192. |
+| Text box | Reading guide (D-07, highest jitter, loss outlier) | H 860, V 424, W 396, Height 272. |
+
+**Verification.** Against `data/processed/ftth_qoe_unit_metrics.csv`: the histogram bars add up to the 144 units with measurable jitter (18, 46, 42, 7, 4, 19, 3, 3 and 2 per interval); the highest P95 jitter is 4.48 ms (unit 4190285) and the medians by ISP are 0.58 ms (Cincinnati Bell), 1.07 ms (Frontier) and 2.50 ms (Verizon); the 19 units between 2.5 and 3.0 ms are all Verizon. The highest loss is 1.66 % (unit 24840041, Frontier), then 0.83 % (unit 1002196, Verizon). Units without jitter: 69 of 108 for Cincinnati Bell (63.9 %), 7 of 61 for Frontier (11.5 %) and 17 of 68 for Verizon (25.0 %). The absence of jitter flags therefore applies to the 144 measurable units only, and it is a strong limitation for Cincinnati Bell.
+
+![Report page 4: jitter histogram, ten highest loss values, null-jitter share by ISP and cards](img/powerbi/21_report_jitter_loss.png)
+
+*Figure 21. Page 4 (Jitter and loss): no unit above 5 ms jitter, one unit above 1 % loss, and 93 units without measurable jitter.*
+
+### 11.7 Page 5 - Sensitivity
+
+The ISP slicer is not used on this page: `variants_matrix` and `sensitivity_grid` are disconnected scenario tables and no slicer filters them.
+
+**Measure:**
+
+```dax
+Headline Sensitivity =
+VAR _base = CALCULATE ( MAX ( variants_matrix[at_risk] ),
+                variants_matrix[time_reading] = "local",
+                variants_matrix[server_rule] = "primary_only" )
+VAR _all = CALCULATE ( MAX ( variants_matrix[at_risk] ),
+                variants_matrix[time_reading] = "local",
+                variants_matrix[server_rule] = "all_servers" )
+RETURN
+    "Base case: " & _base & " units at risk; using all test servers raises it to " & _all
+```
+
+The columns of `sensitivity_grid` (`n_min`, `jitter_p95_ms`, `latency_p95_ms`, `loss_pct`) carry the Σ icon (default summarization). They are set to *Don't summarize* in Column tools so that slicers list their values instead of a range slider.
+
+| Visual | Fields | Notes |
+| :--- | :--- | :--- |
+| Clustered bar | Y-axis `variants_matrix[time_reading]`, X-axis `at_risk` (Maximum), Legend `server_rule` | Greys `#52514E` (primary server, base) and `#B9B7AE` (all servers). H 24, V 88, W 520, Height 320. |
+| Clustered column | X-axis `sensitivity_grid[n_min]` (categorical), Y-axis `at_risk` (Maximum) | Visual filters `latency_p95_ms` = 20, `jitter_p95_ms` = 5, `loss_pct` = 1. H 24, V 424, W 520, Height 272. |
+| Two button slicers | `sensitivity_grid[n_min]`, `sensitivity_grid[jitter_p95_ms]` | Single select and Force selection On (Visual > Slicer settings > Selection); defaults 50 and 5 (the base case). Interaction with the `N_MIN` column chart set to None. H 560 and 916, V 88, W 340, Height 80. |
+| Matrix | Rows `loss_pct`, Columns `latency_p95_ms`, Values `at_risk` (Maximum) | Totals off (a total of maxima is meaningless). Background gradient `#CDE2FB` to `#5598E7`. H 560, V 176, W 696, Height 332. |
+| Text box | Reading guide | H 560, V 524, W 696, Height 172. |
+
+**Why a single selection is required.** A matrix cell shows the maximum of `at_risk`. With one `N_MIN` and one jitter threshold selected, each cell holds exactly one grid row, so the maximum is the real value. Without a jitter selection the same cell showed 11 instead of 5, because it took the maximum over the three jitter thresholds.
+
+**Verification.** `variants_matrix`: local/primary 5, local/all servers 21, UTC/primary 4, UTC/all servers 17. `N_MIN` 30 / 50 / 100: 7 / 5 / 1 (base thresholds). Matrix with `N_MIN` 50 and jitter 5:
+
+| loss_pct \ latency (ms) | 20 | 30 | 50 |
+| :--- | :-: | :-: | :-: |
+| 0.05 | 22 | 20 | 19 |
+| 0.10 | 14 | 12 | 11 |
+| 0.50 | 6 | 4 | 3 |
+| 1.00 | **5** | 3 | 2 |
+
+The base-case cell (loss 1, latency 20) gives 5, equal to the base case. Across the whole grid the count ranges from 1 to 30.
+
+![Report page 5: scenario bars, N_MIN effect and threshold grid](img/powerbi/22_report_sensitivity.png)
+
+*Figure 22. Page 5 (Sensitivity): 5 at risk in the base case; 21 with all servers; 7 to 1 depending on `N_MIN`.*
+
+### 11.8 Page 6 - Data quality and method
+
+**Measure:**
+
+```dax
+Headline Method =
+[Population Units] & " units in scope: " & [Analyzed Units] & " analyzed, " & [Insufficient Units] & " set aside"
+```
+
+| Visual | Fields | Notes |
+| :--- | :--- | :--- |
+| Stacked bar | Y-axis `isp`, X-axis `Analyzed Units` and `Insufficient Units` | Greys `#52514E` and `#B9B7AE`; slicer interaction None. H 24, V 88, W 520, Height 232. |
+| Table | `data_quality_log[scope]`, `[rule]`, `[count]` | Visual filter excludes `scope` = `pipeline` (18 rows: cleaning counters of the latency and jitter files). H 24, V 336, W 520, Height 360. |
+| Text box | How the result was built, and limits | H 560, V 88, W 696, Height 608. |
+
+**Verification.** Headline "258 units in scope: 237 analyzed, 21 set aside". Analyzed / insufficient by ISP: Cincinnati Bell 108 / 12, Frontier 61 / 1, Verizon 68 / 8. The cleaning log matches `data/processed/data_quality_log.csv` (172,800 latency rows read, 9 exact duplicates removed, 172,791 rows after cleaning; 152,730 jitter rows read, 4 exact duplicates removed, 1 conflicting group dropped with 2 rows, 152,724 rows after cleaning).
+
+![Report page 6: analyzed and insufficient units, cleaning log, method and limits](img/powerbi/23_report_data_quality_method.png)
+
+*Figure 23. Page 6 (Data quality and method).*
+
+### 11.9 Report-building notes (Power BI Desktop 2.157.1354.0)
 
 - The properties pane has **Size** (Height, Width) and **Position** (Horizontal, Vertical); there is no "X/Y" naming.
 - The new ISP slicer is a button slicer. Orientation is under **Visual > Multi-button layout > Layout**; text size under **Visual > Callout > Value**.
 - **Edit interactions** (Format tab) stays active until its button is pressed again; the filter and "none" icons on every visual show that the mode is still on.
 - Pasting a slicer onto another page offers **Sync visuals**; *Sync* keeps the ISP selection across pages. Check View > Sync slicers for the pages where it is shown.
-- The text box's **+ Value** button opens a dynamic-value dialog (Copilot); plain text is typed in the body of the box. Spelling underlines appear only while editing.
+- The text box's **+ Value** button opens a dynamic-value dialog (Copilot); plain text is typed in the body of the box. Red spelling underlines come from the Windows proofing setting, not from Power BI; they do not appear in the published report.
+- A numeric field with the Σ icon, dropped on an empty canvas, becomes a card, and dropped in a slicer it becomes a range slider. Set *Don't summarize* in Column tools for columns that are used as categories or slicer values. Value wells of charts cannot use *Don't summarize*; with one row per unit, *Maximum* returns the unit's own value.
+- Slicer options (Single select, Force selection) are under **Visual > Slicer settings > Selection** and exist only after the visual is a slicer.
+- Subtotals of a matrix that shows a maximum (for example `at_risk` per grid cell) are maxima, not sums: switch them off.
+- Keep headlines under about 50 characters at 28 pt in a 760 px card; longer text is cut with an ellipsis.
 - Screenshots: use **Win+Shift+S**. Alt+PrtScn activates the KeyTips and they appear in the image.
 
 ## 12. Modelling notes
@@ -1076,5 +1184,5 @@ SWITCH (
 | 6 | Audit phase 3: `risk_flag`, `risk_severe` and D-10 columns - **done** | Prepare the data |
 | 7A | Per-`Unit ID` reconciliation of the 237 analyzed units - **done** | Analyze the data |
 | 7B | Reconciliation of the 21 insufficient units; result in `docs/reconciliation.md` - **done** | Analyze the data |
-| 8 | Report pages and narrative: pages 1-3 **done**, pages 4-6 pending | Visualize and analyze |
+| 8 | Report pages and narrative: pages 1-6 **done**; final review pending | Visualize and analyze |
 | 9 | Performance, documentation, publishing | Manage and secure |
