@@ -13,6 +13,8 @@ La pregunta: en el horario pico nocturno local (19:00-22:59), cuando muchos ven 
 
 **Resultado clave:** de las 258 unidades FTTH del alcance, 237 pudieron analizarse (21 tienen pocos registros) y 5 de ellas (2.1%) están en riesgo: 4 con un problema de latencia persistente y 1 episódico. El conteo depende de la regla de registros mínimos (entre 1 y 7 unidades en riesgo) y se confirmó unidad por unidad entre Python y Power BI (0 diferencias). Las cifras de versiones anteriores (v1, v2.x) son inválidas y no se reutilizan.
 
+El único caso severo es el episódico (unidad 4190285), y su nivel severo depende de un P95 apenas por encima del umbral.
+
 ### 2. ¿Qué mide cada registro? (Explicado sin tecnicismos)
 
 Cada fila en los datos crudos NO es un cliente y NO es un paquete suelto. Es **una prueba horaria** de un Whitebox.

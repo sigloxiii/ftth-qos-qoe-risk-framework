@@ -72,7 +72,7 @@ Columns `scope`, `rule`, `count`. Scopes `udplatency` and `udpjitter` record the
 - **Population:** 258 units; 237 analyzed (Cincinnati Bell 108, Verizon 68, Frontier 61) and 21 set aside for insufficient peak records (Cincinnati Bell 12, Verizon 8, Frontier 1).
 - **At risk: 5 of 237 (2.1 %)** - Cincinnati Bell 2 (1.9 %), Verizon 2 (2.9 %), Frontier 1 (1.6 %).
 - **By metric:** latency flags 5, jitter flags 0, loss flags 1. Unit 24840041 (Frontier, CA) exceeds both latency (35.8 ms) and loss (1.66 %).
-- **Persistent vs episodic:** 4 persistent and 1 episodic. The episodic unit, 4190285 (Verizon, MD), is also the only severe one: its P95 is 50.0035 ms, but it falls to 14.77 ms once its worst day is removed.
+- **Persistent vs episodic:** 4 persistent and 1 episodic. The episodic unit, 4190285 (Verizon, MD), is also the only severe one (`risk_severe` = 1): its P95 is 50.0035 ms, an interpolated value just above the 50 ms threshold, and it falls to 14.77 ms once its worst day is removed.
 - **Jitter:** no analyzed unit with a measurable value exceeds 5 ms (maximum 4.48 ms). 93 of 237 analyzed units (39 %) have no jitter value (Cincinnati Bell 69 of 108, Frontier 7 of 61, Verizon 17 of 68), so the jitter result covers 144 units.
 - **Loss:** only one unit above 1 %; the next highest is 0.83 % (unit 1002196, Verizon).
 - **Sensitivity:** the result depends mostly on the server rule: 5 units at risk with the primary server and 21 with all servers (local time); 4 and 17 under the UTC reading. `N_MIN` 30, 50 and 100 give 7, 5 and 1. Across the full threshold grid the count ranges from 1 to 30.

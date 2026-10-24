@@ -12,6 +12,7 @@ Imagine you are a fiber ISP (FTTH). Some of your homes have a small white box (W
 The question: in the local evening peak (19:00-22:59), when many people stream, game and video-call, which homes show degraded quality? And how much of that degradation is real, versus an artifact of the measuring device or of the analysis?
 
 **Key result:** of the 258 FTTH units in scope, 237 could be analyzed (21 have too few records) and 5 of them (2.1%) are at risk: 4 with a persistent latency problem and 1 episodic. The count depends on the minimum-records rule (between 1 and 7 units at risk) and was confirmed unit by unit between Python and Power BI (0 mismatches). Figures from earlier versions (v1, v2.x) are invalid and are not reused.
+The only severe case is the episodic one (unit 4190285), and its severe tier rests on a P95 just above the threshold.
 
 ### 2. What does each record measure? (No jargon)
 

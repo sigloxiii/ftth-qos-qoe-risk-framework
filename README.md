@@ -206,7 +206,7 @@ The differences between ISPs rest on one or two units each, so they are not evid
 ### Findings
 
 1. **Latency is the only metric that separates units.** Five units exceed 20 ms P95 latency, none exceeds 5 ms P95 jitter and one exceeds 1 % loss. Unit 24840041 (Frontier, CA) exceeds both latency (35.8 ms) and loss (1.66 %); the next highest loss is 0.83 %.
-2. **Most flags are persistent.** Four of the five at-risk units stay above 20 ms after removing their worst day. The fifth, 4190285 (Verizon, MD), is episodic: its P95 is 50.0035 ms, the only severe case, but falls to 14.77 ms without its worst day (the severe tier rests on an interpolated P95 just above 50 ms).
+2. **Most flags are persistent.** Four of the five at-risk units stay above 20 ms after removing their worst day. The fifth, 4190285 (Verizon, MD), is both **severe and episodic**: its P95 is 50.0035 ms, just above the 50 ms severe threshold and the only severe case, but it falls to 14.77 ms once its worst day (2022-10-23) is removed. The severe tier rests on an interpolated P95; no record equals 50 ms.
 3. **Jitter cannot be assessed for 39 % of the analyzed units.** 93 units have fewer than 50 peak jitter records and their jitter stays empty (never 0): Cincinnati Bell 69 of 108, Verizon 17 of 68, Frontier 7 of 61. The jitter result covers 144 units (maximum 4.48 ms).
 4. **Several units sit close to the threshold.** 34 units have a P95 latency between 15 and 20 ms, so a small change in the thresholds or the sample moves the count.
 5. **The count depends on method choices, not only on the data.**
