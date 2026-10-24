@@ -238,7 +238,7 @@ These results are bound by the limits in section 8: one period (2022), a non-ran
 - The local-time reading of `dtime` rests on indirect evidence (Cable and DSL; Fiber was not tested) and contradicts the FCC general note; the UTC reading is reported as a sensitivity.
 - The jitter unit (µs) is supported indirectly, not documented, and jitter is dominated by the upstream value. Jitter is evaluated for about 61% of the analyzed units in the base case; the rest have fewer than 50 peak jitter records.
 - The number of units at risk is sensitive to `N_MIN`, and some flags are episodic (one day) or close to the threshold; both are reported with the result.
-
+- Scope is the technical identification of QoE risk and degradation. Financial impact (truck rolls, churn, avoided costs) is not estimated: there is no source for unit costs, and the v1 baseline was invalidated by bias. Any future estimate would be a labeled scenario with explicit, parameterized assumptions (`docs/metrics_spec.md`, section 10).
 ## 9. Documentation Index
 
 - [`docs/metrics_spec.md`](docs/metrics_spec.md): metric definitions, data quality rules, reconciliation protocol.
