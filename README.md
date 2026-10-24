@@ -70,7 +70,7 @@ Full definitions are in [`docs/metrics_spec.md`](docs/metrics_spec.md) v1.2.0 an
 - Rationale: the Whitebox is the measurement instrument. A device that cannot forward traffic at line rate creates the degradation it reports. Filter uses nominal capability, not per-unit throughput test (see Limitations).
 
 **Peak window - DECISION D-03**
-- **D-03 (2026-10-11): `dtime` is treated as LOCAL time, not UTC.** Already Implemented in `src/pipeline.py`: `local_hour = hour(dtime)`. No offset added. `dtime_format: "%Y-%m-%d %H:%M:%S"` string with no TZ marker (verified Step 0, not unix epoch).
+- **D-03 (2026-10-11): `dtime` is treated as LOCAL time, not UTC.** Implemented in `src/pipeline.py`: `local_hour = hour(dtime)`. No offset added. `dtime_format: "%Y-%m-%d %H:%M:%S"` string with no TZ marker (verified Step 0, not unix epoch).
 - Evidence (Step 7/8): FCC dictionary says UTC, but hourly RTT profile of Pacific units (UTC-7) does not trail Eastern (UTC-4) by 3h as UTC would imply. Correlation at +3h shift ~0 or negative; best alignment -1 to -2h, much closer to 0 (local) than to +3 (UTC).
   - Cable: k=0 corr 0.762 vs k=+3 -0.107, best k=-1 0.892, peak Eastern 21h / Pacific 20h (dtime hour)
   - DSL: k=0 0.594 vs k=+3 -0.018, best k=-2 0.799, peak 21h/19h
@@ -105,8 +105,6 @@ Full definitions are in [`docs/metrics_spec.md`](docs/metrics_spec.md) v1.2.0 an
 - Base case (D-03 local + D-04 primary server; `pipeline.py` reproduces `step_9.py`): 237 analyzed / 21 insufficient / 5 at risk (2.1%), 4 persistent and 1 episodic (D-10); between 1 and 7 at risk depending on `N_MIN`. Confirmed by the Python ↔ Power BI reconciliation: 258 units compared, 0 mismatches (`docs/reconciliation.md`).
 
 ## 4. Repository Structure
-
-Items marked *(planned)* do not exist yet.
 
 ```
 ftth-qos-qoe-risk-framework/
@@ -162,7 +160,7 @@ Raw data: FCC MBA validated data, 2022 release (13th Measuring Broadband America
 1. Download and extract the files listed above to a local folder.
 2. Create `config.local.yaml` (example in section 4) and set `raw_dir`.
 3. Install dependencies: `pip install -r requirements.txt`
-4. Exploration scripts (available now): run `python src/steps/step_1.py` first (it creates the interim CSVs from the raw files), then any other step. They print to the console; the recorded output of each is in its `OUTPUT` docstring. The scripts read absolute Windows paths (`BASE`, `RAW`, `INTERIM`) that must be edited to run elsewhere (see `src/README.md`).
+4. Exploration scripts: run `python src/steps/step_1.py` first (it creates the interim CSVs from the raw files), then any other step. They print to the console; the recorded output of each is in its `OUTPUT` docstring. The scripts read absolute Windows paths (`BASE`, `RAW`, `INTERIM`) that must be edited to run elsewhere (see `src/README.md`).
 5. Run the pipeline: `python src/pipeline.py`. The first run reads the raw files (several minutes) and caches the FTTH rows in `data/interim/pipeline_*_ftth.csv`; later runs reuse the cache (`--refresh-cache` re-reads the raw files, `--no-variants` skips the 2×2 matrix and the D-08 grid). It writes the five files of `data/processed/` and reproduces the figures in `docs/procedure_summary_v3.md` unit by unit.
 6. Validate with tests: `python -m pytest tests -v` (run from the repository root, after step 5). 21 checks: population 258/27 and exclusion files, `N_MIN`, jitter null only below the minimum and never 0, loss range, flags against thresholds, D-10 columns, data-quality log, and the base-case reference (237 / 21 / 5).
 7. Reconcile Power BI (done): The Power BI report consumes ONLY `data/processed/`; an independent set of Power Query audit queries recomputes the metrics from `data/interim/` and is compared with `data/processed/` per `Unit ID` with the tolerances of `docs/metrics_spec.md` section 8 (±0.001 ms for P95 latency and jitter, ±0.001 percentage points for loss, exact match for `risk_flag`), saved in `docs/reconciliation.md`.
@@ -253,7 +251,7 @@ These results are bound by the limits in section 8: one period (2022), a non-ran
 - [`docs/glossary_of_terms.md`](docs/glossary_of_terms.md): glossary of terms.
 - [`docs/Capstone-FTTH-Executive-Brief-EN.md`](docs/Capstone-FTTH-Executive-Brief-EN.md) and [`docs/Capstone-FTTH-Resumen-Ejecutivo.md`](docs/Capstone-FTTH-Resumen-Ejecutivo.md): executive brief in English and Spanish.
 - [`archive/`](archive/): v1 and v2 material, kept as a record of the iteration.
-
+- [`docs/reconciliation.md`](docs/reconciliation.md): Python ↔ Power BI unit-level reconciliation (258 units, 0 mismatches).
 ## 10. License
 
 MIT. See [LICENSE](LICENSE).

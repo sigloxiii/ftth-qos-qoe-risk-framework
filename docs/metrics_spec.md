@@ -1,6 +1,6 @@
 # Metrics Specification — FTTH QoE Risk
 
-**Spec version:** 1.2.0 · **Last updated:** 2026-10-18
+**Spec version:** 1.2.0 · **Last updated:** 2026-10-23
 **Status:** Baseline. Any change is made first in this document, then in `config.yaml` and `src/`, and recorded in the Changelog (section 12).
 **Central rule:** one implementation of each transformation (Python). Power BI does **not** recalculate metrics; it only visualizes them.
 

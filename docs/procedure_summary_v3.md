@@ -1,6 +1,6 @@
 # FTTH QoE Capstone - Procedure Summary v3.2
 
-**Methodology:** v3.0 | **Spec:** v1.2.0 | **Config:** mirrors spec v1.2.0 | **Document:** v3.3 | **Last updated:** 2026-10-18 | **Author:** Eng. Rafael Cansigno P.
+**Methodology:** v3.0 | **Spec:** v1.2.0 | **Config:** mirrors spec v1.2.0 | **Document:** v3.3 | **Last updated:** 2026-10-23 | **Author:** Eng. Rafael Cansigno P.
 
 Companion documents: `docs/decisions.md` (decision log, D-01 to D-10), `docs/data_dictionary.md` (columns and time handling), `docs/data_inspection.md` (Step 0 results), `docs/metrics_spec.md` (rules), `config.yaml` (values).
 

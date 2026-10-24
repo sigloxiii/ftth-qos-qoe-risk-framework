@@ -1,6 +1,6 @@
 # Data Dictionary — FCC MBA Files Used in This Project
 
-**Version:** 1.3.0 · **Last reviewed:** 2026-10-17
+**Version:** 1.3.0 · **Last reviewed:** 2026-10-23
 **Purpose:** Document what each column of each input file means, based on the official FCC documentation, and record what has been verified against the real files (Step 0 in `docs/metrics_spec.md`).
 
 **Changes in 1.3.0:** check 6 closed (packets per row 50 to 2,401); jitter unit supported indirectly (`step_10.py`) and its upstream dominance documented; `target` and unit-profile statuses updated; decisions D-04 to D-07 referenced; sensitivity figures recomputed with `N_MIN` applied (`step_9.py`); duplicate and invalid-record check added (check 9).
